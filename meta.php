@@ -7,6 +7,7 @@
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
 
 $db = new mysqli('127.0.0.1', 'root', '');
 foreach ($db->query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ('information_schema','performance_schema','mysql')") as $row) {
