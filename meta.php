@@ -19,7 +19,7 @@ foreach ($db->query("SELECT * FROM information_schema.columns WHERE table_schema
 
 file_put_contents('meta_data.php', str_replace([' ',"\n",'array(',',)','$'], ['','','[',']',"\n$"], '<?php'.
 	'$columns='.var_export($columns, true).';'.
-	'$primaries='.var_export($columns, true).';'), LOCK_EX);
+	'$primaries='.var_export($primaries, true).';'), LOCK_EX);
 
 $columns = null;
 include 'meta_data.php';
