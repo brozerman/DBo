@@ -5,6 +5,7 @@ php:
 before_script:
   - pear channel-discover pear.phpunit.de
   - pear install pear/PHP_CodeSniffer >/dev/null
+  - phpenv rehash
 
 script:
   - phpunit --coverage-text tests/*.php
