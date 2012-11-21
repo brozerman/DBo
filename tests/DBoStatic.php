@@ -54,7 +54,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($id, "1");
 
 		DBo::query("INSERT INTO test.t2 VALUES ()");
-		$this->assertEquals(DBo::query("UPDATE test.t2 SET a=a+1"), 2);
+		$this->assertEquals(DBo::query("UPDATE test.t2 SET a=a-1"), 2);
 
 		DBo::query("INSERT INTO test.t2 VALUES ()");
 		$this->assertEquals(DBo::query("DELETE FROM test.t2"), 3);
