@@ -17,6 +17,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		$db = new mysqli("127.0.0.1", "root", "", "test");
 		$db->query("CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20))");
 		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
+		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY)");
 		$db->close();
 	}
 
@@ -46,6 +47,22 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 			$rows[] = $row;
 		}
 		$this->assertEquals($rows, [["a"=>"3", "b"=>"4", "c"=>"cd"]]);
+	}
+
+	public function testInsertUpdateDeleteReplace() {
+		$id = DBo::query("INSERT INTO test.t2 VALUES ()");
+		$this->assertEquals($id, "1");
+
+		DBo::query("INSERT INTO test.t2 VALUES ()");
+		$this->assertEquals(DBo::query("UPDATE test.t2 SET a=a+1"), 2);
+
+		DBo::query("INSERT INTO test.t2 VALUES ()");
+		$this->assertEquals(DBo::query("DELETE FROM test.t2"), 3);
+
+		// TODO replace
+	}
+
+	public function testUpdate() {
 	}
 
 	public function testOne() {
