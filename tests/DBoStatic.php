@@ -45,7 +45,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		foreach (DBo::query("SELECT * FROM test.t1 WHERE a=3") as $row) {
 			$rows[] = $row;
 		}
-		$this->assertEquals($row, [["a"=>"3", "b"=>"4", "c"=>"cd"]]);
+		$this->assertEquals($rows, [["a"=>"3", "b"=>"4", "c"=>"cd"]]);
 	}
 
 	public function testOne() {
