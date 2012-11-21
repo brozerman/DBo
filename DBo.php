@@ -15,7 +15,7 @@ private static function _escape($params) {
 			$params[$key] = "(".implode(",", self::_escape($param)).")";
 		} else if ($param===null) {
 			$params[$key] = "NULL";
-		} else if ($param==="0") {
+		} else if ($param==="0" or $param===0) {
 			$params[$key] = "'0'";
 		} else if (!is_numeric($param)) {
 			$params[$key] = "'".self::$conn->real_escape_string($param)."'";
