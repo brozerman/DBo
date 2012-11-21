@@ -34,11 +34,12 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
     }
 
 	public function testEscape() {
-		$method = new ReflectionMethod('DBo', '_escape');
+		$method = new ReflectionMethod("DBo", "_escape");
         $method->setAccessible(TRUE);
 
-        $this->assertEquals("10", $method->invoke(10));
-        $this->assertEquals("'0'", $method->invoke(0));
-        $this->assertEquals("NULL", $method->invoke(null));
+        $this->assertEquals("10", $method->invoke(null, 10));
+        $this->assertEquals("'0'", $method->invoke(null, 0));
+        $this->assertEquals("NULL", $method->invoke(null, null));
+        $this->assertEquals("'hello\\rworld\\n!'", $method->invoke(null, "hello\rworld\n!"));
 	}
 }
