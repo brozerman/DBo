@@ -6,8 +6,6 @@ before_script:
   - pear channel-discover pear.phpunit.de
   - pear install pear/PHP_CodeSniffer >/dev/null
   - phpenv rehash
-  - mysql -e "CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20));"
-  - mysql -e "INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');"
 
 script:
   - phpunit --coverage-text tests/*.php
