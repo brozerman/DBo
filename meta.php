@@ -32,7 +32,8 @@ file_put_contents('meta_data.php', str_replace($from, $to, '<?php'.
 	'$cols='.var_export($cols, true).';'.
 	'$pkeys='.var_export($pkeys, true).';'.
 	'$fkeys='.var_export($fkeys, true).';'.
-	'$idx='.var_export($idx, true).';'), LOCK_EX);
+	'$idx='.var_export($idx, true).';'), LOCK_EX
+);
 
 $cols = null;
 include 'meta_data.php';
