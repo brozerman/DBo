@@ -27,4 +27,18 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
         DBo::commit();
 		$this->assertEquals(mysqli_log::$queries, ["commit"]);
     }
+
+	public function testRollback() {
+        DBo::rollback();
+		$this->assertEquals(mysqli_log::$queries, ["rollback"]);
+    }
+
+	public function testEscape() {
+		$method = new ReflectionMethod('DBo', '_escape');
+        $method->setAccessible(TRUE);
+
+        $this->assertEquals("10", $method->invoke(10));
+        $this->assertEquals("'0'", $method->invoke(0));
+        $this->assertEquals("NULL", $method->invoke(null));
+	}
 }
