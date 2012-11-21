@@ -1,0 +1,15 @@
+language: php
+php:
+  - 5.4
+
+before_script:
+  - pear channel-discover pear.phpunit.de
+  - pear install pear/PHP_CodeSniffer >/dev/null
+
+script:
+  - phpunit --coverage-text tests/*.php
+  - phpcs --standard=zend --report-width=100 *.php | grep -Ev "\| (Spaces|Line exceeds|Opening brace)"
+
+notifications:
+  email:
+    - thbley@gmail.com
