@@ -26,7 +26,7 @@ foreach ($db->query("SELECT * FROM information_schema.key_column_usage WHERE tab
 	$idx[ $row['TABLE_SCHEMA'] ][ $row['TABLE_NAME'] ][] = $row['COLUMN_NAME'];
 }
 
-file_put_contents('meta_data.php', str_replace([' ',"\n",'array(',',)','$'], ['','','[',']',"\n$"], '<?php'.
+file_put_contents('meta_data.php', str_replace([' ', "\n", 'array(',',)', '$'], ['', '', '[',']', "\n\$"], '<?php'.
 	'$cols='.var_export($cols, true).';'.
 	'$pkeys='.var_export($pkeys, true).';'.
 	'$fkeys='.var_export($fkeys, true).';'.
