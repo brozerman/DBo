@@ -41,5 +41,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(["'0'","1"], $method->invoke(null, [0,1]));
 		$this->assertEquals(["NULL","'0'","'0'","'NULL'"], $method->invoke(null, [null,0,"0","NULL"]));
 		$this->assertEquals(["'hello\\rworld\\n!'"], $method->invoke(null, ["hello\rworld\n!"]));
+		$this->assertEquals(["(1,2,3)"], $method->invoke(null, [[1,2,3]]));
+		$this->assertEquals(["(1,2,(3,4))"], $method->invoke(null, [[1,2,[3,4]]]));
 	}
 }
