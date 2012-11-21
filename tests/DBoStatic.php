@@ -13,6 +13,13 @@ class mysqli_log extends mysqli {
 
 class DBoStatic extends PHPUnit_Framework_TestCase {
 
+	public static function setUpBeforeClass() {
+		$db = new mysqli("127.0.0.1", "root", "", "test");
+		$db->query("CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20))");
+		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
+		$db->close();
+	}
+
 	protected function setUp() {
 		mysqli_log::$queries = [];
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"));
@@ -21,17 +28,42 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	public function testBegin() {
 		DBo::begin();
 		$this->assertEquals(mysqli_log::$queries, ["begin"]);
-    }
+	}
 
 	public function testCommit() {
 		DBo::commit();
 		$this->assertEquals(mysqli_log::$queries, ["commit"]);
-    }
+	}
 
 	public function testRollback() {
 		DBo::rollback();
 		$this->assertEquals(mysqli_log::$queries, ["rollback"]);
-    }
+	}
+
+	public function testOne() {
+		$row = DBo::one("SELECT * FROM test.t1 WHERE a=3");
+		$this->assertEquals($row, ["a"=>"3", "b"=>"4", "c"=>"cd"]);
+	}
+
+	public function testObject() {
+		$obj = DBo::object("SELECT * FROM test.t1 WHERE a=3");
+		$this->assertEquals($obj, (object)["a"=>"3", "b"=>"4", "c"=>"cd"]);
+	}
+
+	public function testValue() {
+		$value = DBo::value("SELECT a FROM test.t1 WHERE a=3");
+		$this->assertEquals($value, "3");
+	}
+
+	public function testValues() {
+		$values = DBo::values("SELECT a FROM test.t1");
+		$this->assertEquals($values, ["1", "3", "5"]);
+	}
+
+	public function testKeyValue() {
+		$kv = DBo::keyValues("SELECT a,b FROM test.t1");
+		$this->assertEquals($kv, ["1"=>"2", "3"=>"4", "5"=>"6"]);
+	}
 
 	public function testEscape() {
 		$method = new ReflectionMethod("DBo", "_escape");
