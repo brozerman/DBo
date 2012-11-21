@@ -51,6 +51,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	public function testOne() {
 		$row = DBo::one("SELECT * FROM test.t1 WHERE a=3");
 		$this->assertEquals($row, ["a"=>"3", "b"=>"4", "c"=>"cd"]);
+		// TODO test params
 	}
 
 	public function testObject() {
@@ -71,6 +72,11 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	public function testKeyValue() {
 		$kv = DBo::keyValue("SELECT a,b FROM test.t1");
 		$this->assertEquals($kv, ["1"=>"2", "3"=>"4", "5"=>"6"]);
+	}
+
+	public function testQueryToText() {
+		$str = DBo::queryToText("SELECT a,b FROM test.t1");
+		$this->assertEquals($str, "");
 	}
 
 	public function testEscape() {
