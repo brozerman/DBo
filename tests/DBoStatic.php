@@ -76,7 +76,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 
 	public function testQueryToText() {
 		$str = DBo::queryToText("SELECT a,b FROM test.t1");
-		$this->assertEquals($str, "SELECT a,b FROM test.t1 | 3 rows\n\na | b |\n1 | 2 |\n3 | 4 |\n\n5 | 6 |\n");
+		$this->assertEquals($str, "SELECT a,b FROM test.t1 | 3 rows\n\na | b | \n1 | 2 | \n3 | 4 | \n5 | 6 | \n");
 	}
 
 	public function testEscape() {
