@@ -52,12 +52,6 @@ public static function keyValue($query, $params=null) {
 	return $return;
 }
 
-public static function keyValueY($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
-	$result = self::$conn->query($query);
-	while ($row = $result->fetch_row()) yield $row[0] => $row[1];
-}
-
 public static function value($query, $params=null) {
 	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
 	return self::$conn->query($query)->fetch_row()[0];
@@ -71,11 +65,19 @@ public static function values($query, $params=null) {
 	return $return;
 }
 
+/* PHP 5.5
+public static function keyValueY($query, $params=null) {
+	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	$result = self::$conn->query($query);
+	while ($row = $result->fetch_row()) yield $row[0] => $row[1];
+}
+
 public static function valuesY($query, $params=null) {
 	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()[0]) yield $row;
 }
+*/
 
 public static function begin() {
 	self::$conn->query('begin');
