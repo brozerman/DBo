@@ -61,7 +61,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testKeyValue() {
-		$kv = DBo::keyValues("SELECT a,b FROM test.t1");
+		$kv = DBo::keyValue("SELECT a,b FROM test.t1");
 		$this->assertEquals($kv, ["1"=>"2", "3"=>"4", "5"=>"6"]);
 	}
 
