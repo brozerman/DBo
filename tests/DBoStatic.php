@@ -11,6 +11,9 @@ class mysqli_log extends mysqli {
 	}
 }
 
+/**
+ * DBo test static methods
+ */
 class DBoStatic extends PHPUnit_Framework_TestCase {
 
 	public static function setUpBeforeClass() {
@@ -88,6 +91,11 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	public function testKeyValue() {
 		$kv = DBo::keyValue("SELECT a,b FROM test.t1");
 		$this->assertEquals($kv, ["1"=>"2", "3"=>"4", "5"=>"6"]);
+	}
+
+	public function testKeyValues() {
+		$kv = DBo::keyValues("SELECT a,b,c FROM test.t1 LIMIT 2");
+		$this->assertEquals($kv, ["1"=>["b"=>"2", "c"=>"ab"], "3"=>["b"=>"4", "c"=>"cd"]]);
 	}
 
 	public function testQueryToText() {
