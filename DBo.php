@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * DBo Efficient ORM
+ *
+ * @see http://we-love-php.blogspot.de/2012/08/how-to-implement-small-and-fast-orm.html
+ */
 class DBo {
 
 public static $conn = null;
@@ -49,6 +54,14 @@ public static function keyValue($query, $params=null) {
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()) $return[$row[0]] = $row[1];
+	return $return;
+}
+
+public static function keyValues($query, $params=null) {
+	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	$return = [];
+	$result = self::$conn->query($query);
+	while ($row = $result->fetch_assoc()) $return[array_shift($row)] = $row;
 	return $return;
 }
 
