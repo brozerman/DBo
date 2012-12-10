@@ -30,7 +30,12 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testConn() {
-		// TODO test exception
+		$this->assertEquals(DBo::query("SELECT 1=1")->fetch_row(), ["1"]);
+	}
+
+	public function testConnException() {
+		$this->setExpectedException("mysqli_sql_exception");
+		DBo::conn(new mysqli_log("127.0.0.1", "root2", "", "test"));
 	}
 
 	public function testBegin() {
@@ -49,12 +54,16 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testQuery() {
-		// TODO test exception
 		$rows = [];
 		foreach (DBo::query("SELECT * FROM test.t1 WHERE a=3") as $row) {
 			$rows[] = $row;
 		}
 		$this->assertEquals($rows, [["a"=>"3", "b"=>"4", "c"=>"cd"]]);
+	}
+
+	public function testQueryException() {
+		$this->setExpectedException("mysqli_sql_exception");
+		DBo::query("SELECT * FROM test_invalid")->fetch_array();
 	}
 
 	public function testInsertUpdateDeleteReplace() {
