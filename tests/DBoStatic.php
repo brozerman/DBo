@@ -29,6 +29,10 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"));
 	}
 
+	public function testConn() {
+		// TODO test exception
+	}
+
 	public function testBegin() {
 		DBo::begin();
 		$this->assertEquals(mysqli_log::$queries, ["begin"]);
@@ -45,6 +49,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testQuery() {
+		// TODO test exception
 		$rows = [];
 		foreach (DBo::query("SELECT * FROM test.t1 WHERE a=3") as $row) {
 			$rows[] = $row;

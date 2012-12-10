@@ -1,5 +1,8 @@
 <?php
 
+// throw mysqli_sql_exception on connection or query error
+mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
+
 /**
  * DBo Efficient ORM
  *
@@ -10,7 +13,6 @@ class DBo {
 public static $conn = null;
 
 public static function conn(mysqli $conn) {
-	mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
 	self::$conn = $conn;
 }
 
