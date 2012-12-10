@@ -34,8 +34,8 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testConnException() {
-		// $this->setExpectedException("mysqli_sql_exception");
-		// DBo::conn(new mysqli("127.0.0.1", "root2", "", "test"));
+		$this->setExpectedException("mysqli_sql_exception");
+		DBo::conn(new mysqli("127.0.0.1", "root", "invalid", "test"));
 	}
 
 	public function testBegin() {
