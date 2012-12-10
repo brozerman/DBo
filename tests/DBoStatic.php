@@ -120,7 +120,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	private function _testEscape($param) {
 		$method = new ReflectionMethod("DBo", "_escape");
 		$method->setAccessible(TRUE);
-		$method->invoke(null, $param); // reference!
+		$method->invokeArgs(null, [&$param]); // reference!
 		return $param;
 	}
 
