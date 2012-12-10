@@ -117,15 +117,19 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($str, "SELECT a,b FROM test.t1 | 3 rows\n\na | b | \n1 | 2 | \n3 | 4 | \n5 | 6 | \n");
 	}
 
-	public function testEscape() {
+	private function _testEscape($param) {
 		$method = new ReflectionMethod("DBo", "_escape");
 		$method->setAccessible(TRUE);
+		$method->invoke(null, $param); // reference!
+		return $param;
+	}
 
-		$this->assertEquals(["10", "11"], $method->invoke(null, [10,11]));
-		$this->assertEquals(["'0'","1"], $method->invoke(null, [0,1]));
-		$this->assertEquals(["NULL","'0'","'0'","'NULL'"], $method->invoke(null, [null,0,"0","NULL"]));
-		$this->assertEquals(["'hello\\rworld\\n!'"], $method->invoke(null, ["hello\rworld\n!"]));
-		$this->assertEquals(["(1,2,3)"], $method->invoke(null, [[1,2,3]]));
-		$this->assertEquals(["(1,2,(3,4))"], $method->invoke(null, [[1,2,[3,4]]]));
+	public function testEscape() {
+		$this->assertEquals(["10", "11"], self::_testEscape([10,11]));
+		$this->assertEquals(["'0'","1"], self::_testEscape([0,1]));
+		$this->assertEquals(["NULL","'0'","'0'","'NULL'"], self::_testEscape([null,0,"0","NULL"]));
+		$this->assertEquals(["'hello\\rworld\\n!'"], self::_testEscape(["hello\rworld\n!"]));
+		$this->assertEquals(["(1,2,3)"], self::_testEscape([[1,2,3]]));
+		$this->assertEquals(["(1,2,(3,4))"], self::_testEscape([[1,2,[3,4]]]));
 	}
 }
