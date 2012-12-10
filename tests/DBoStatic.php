@@ -94,12 +94,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 	public function testValue() {
 		$value = DBo::value("SELECT a FROM test.t1 WHERE a=3");
 		$this->assertEquals($value, "3");
-	}
-
-	public function testValueParam() {
-		$row = DBo::value("SELECT b FROM test.t1 WHERE a=?", 3);
-		$this->assertEquals($row, "4");
-		// TODO test more params
+		// TODO test params
 	}
 
 	public function testValues() {
