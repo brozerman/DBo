@@ -16,24 +16,24 @@ public static function conn(mysqli $conn) {
 	self::$conn = $conn;
 }
 
-private static function _escape($params) {
+private static function _escape(&$params) {
 	foreach ($params as $key=>$param) {
 		if (is_array($param)) {
-			$params[$key] = "(".implode(",", self::_escape($param)).")";
+			self::_escape($param);
+			$params[$key] = "(".implode(",", $param).")";
 		} else if ($param===null) {
 			$params[$key] = "NULL";
 		} else if ($param==="0" or $param===0) {
 			$params[$key] = "'0'";
 		} else if (!is_numeric($param)) {
 			$params[$key] = "'".self::$conn->real_escape_string($param)."'";
-		}
-	}
-	return $params;
-}
+}	}	}
 
 public static function query($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
-
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	if (preg_match('!^(?:insert|update|delete|replace) !i', $query)) {
 		self::$conn->query($query);
 		return self::$conn->insert_id ?: self::$conn->affected_rows;
@@ -42,17 +42,26 @@ public static function query($query, $params=null) {
 }
 
 public static function one($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	return self::$conn->query($query)->fetch_assoc();
 }
 
 public static function object($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	return self::$conn->query($query)->fetch_object();
 }
 
 public static function keyValue($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()) $return[$row[0]] = $row[1];
@@ -60,20 +69,42 @@ public static function keyValue($query, $params=null) {
 }
 
 public static function keyValues($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_assoc()) $return[array_shift($row)] = $row;
 	return $return;
 }
 
+public static function esc($params) {
+}
+
 public static function value($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		$params = func_get_args();
+		array_shift($params);
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
+	return self::$conn->query($query)->fetch_row()[0];
+}
+
+public static function value2($query, array $params=null) {
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	return self::$conn->query($query)->fetch_row()[0];
 }
 
 public static function values($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()[0]) $return[] = $row;
@@ -82,13 +113,19 @@ public static function values($query, $params=null) {
 
 /* PHP 5.5
 public static function keyValueY($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()) yield $row[0] => $row[1];
 }
 
 public static function valuesY($query, $params=null) {
-	if ($params) $query = vsprintf(str_replace("?", "%s", $query), self::_escape($params));
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()[0]) yield $row;
 }
