@@ -132,4 +132,11 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(["(1,2,3)"], self::_testEscape([[1,2,3]]));
 		$this->assertEquals(["(1,2,(3,4))"], self::_testEscape([[1,2,[3,4]]]));
 	}
+
+	public function testExportMeta() {
+		$this->assertEquals("", DBo::exportMeta());
+	}
+
+	public function testLoadMeta() {
+	}
 }
