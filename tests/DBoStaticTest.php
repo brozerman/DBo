@@ -104,14 +104,14 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testValues() {
 		$values = DBo::values("SELECT a FROM test.t1");
 		$this->assertEquals($values, ["1", "3", "5"]);
-		$values = DBo::values("SELECT a FROM test.t1 WHERE b IN ?", [2,4]);
+		$values = DBo::values("SELECT a FROM test.t1 WHERE b IN ?", [[2,4]]);
 		$this->assertEquals($values, ["1", "3"]);
 	}
 
 	public function testKeyValue() {
 		$kv = DBo::keyValue("SELECT a,b FROM test.t1");
 		$this->assertEquals($kv, ["1"=>"2", "3"=>"4", "5"=>"6"]);
-		$kv = DBo::keyValue("SELECT a,b FROM test.t1 WHERE a IN ?", [1,3]);
+		$kv = DBo::keyValue("SELECT a,b FROM test.t1 WHERE a IN ?", [[1,3]]);
 		$this->assertEquals($kv, ["1"=>"2", "3"=>"4"]);
 	}
 
