@@ -143,9 +143,11 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 
 	public function testLoadSchema() {
 		DBo::loadSchema();
-		$prop = new ReflectionProperty("DBo", "schema");
-		$schema = $prop->getValue();
-		$this->assertEquals(["a"], $schema->pkeys["test"]["t2"]);
-		$this->assertEquals(["a"=>1], $schema->cols["test"]["t2"]);
+		$schema = (object)[
+			"cols"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1], "t2"=>["a"=>1]]],
+			"pkeys"=>["test"=>["t2"=>["a"]]],
+			"idx"=>["test"=>["t2"=>["a"]]],
+		];
+		$this->assertAttributeEquals($schema, "schema", DBo);		
 	}
 }
