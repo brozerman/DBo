@@ -11,6 +11,7 @@ mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
 class DBo {
 
 public static $conn = null;
+protected static $schema = null;
 
 // join stack
 protected $stack = [];
@@ -182,5 +183,32 @@ public static function queryToText($query, $params=null) {
 		$result .= "\n";
 	}
 	return $result;
+}
+
+public static function loadSchema() {
+	require "schema.php";
+	self::$schema = new stdclass();
+	self::$schema->cols = &$cols;
+	self::$schema->pkeys = &$pkeys;
+	self::$schema->idx = &$idx;
+}
+
+public static function exportSchema($exclude_db=["information_schema", "performance_schema", "mysql"]) {
+	$cols = [];
+	$pkeys = [];
+	$idx = [];
+	foreach (self::query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
+		$cols[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+	}
+	foreach (self::query("SELECT * FROM information_schema.key_column_usage WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
+		if ($row["CONSTRAINT_NAME"] == "PRIMARY") $pkeys[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+		$idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+	}
+	$schema = "<?php \$cols=".var_export($cols, true)."; \$pkeys=".var_export($pkeys, true)."; \$idx=".var_export($idx, true).";";
+	$schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
+	file_put_contents("schema.php", $schema, LOCK_EX);
+	$cols = null;
+	require "schema.php";
+	if (empty($cols)) throw new Exception("Error creating static schema data.");
 }
 }
