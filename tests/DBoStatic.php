@@ -119,7 +119,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 
 	private function _testEscape($param) {
 		$method = new ReflectionMethod("DBo", "_escape");
-		$method->setAccessible(TRUE);
+		$method->setAccessible(true);
 		$method->invokeArgs(null, [&$param]); // reference!
 		return $param;
 	}
@@ -135,9 +135,18 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 
 	public function testExportSchema() {
 		DBo::exportSchema();
-		$this->assertEquals("", file_get_contents("schema.php"));
+		$this->assertEquals(file_get_contents("schema.php"), "<?php\n".
+			"\$cols=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1]]];\n".
+			"\$pkeys=['test'=>['t2'=>[0=>'a']]];\n".
+			"\$idx=['test'=>['t2'=>[0=>'a']]];");
 	}
 
 	public function testLoadSchema() {
+		DBo::loadSchema();
+		$prop = new ReflectionProperty("DBo", "schema");
+		$prop->setAccessible(true)
+		$schema = $prop->getValue();
+		$this->assertEquals(["a"], $schema->pkeys["test"]["t2"]);
+		$this->assertEquals(["a"=>1], $schema->cols["test"]["t2"]);
 	}
 }
