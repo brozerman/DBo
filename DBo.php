@@ -79,9 +79,7 @@ public static function keyValues($query, $params=null) {
 	return $return;
 }
 
-public static function esc($params) {
-}
-
+/* value(query, param1, param2, ...)
 public static function value($query, $params=null) {
 	if ($params) {
 		$params = func_get_args();
@@ -91,8 +89,10 @@ public static function value($query, $params=null) {
 	}
 	return self::$conn->query($query)->fetch_row()[0];
 }
+*/
 
-public static function value2($query, array $params=null) {
+// value(query, [param1, param2, ...])
+public static function value($query, array $params=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
