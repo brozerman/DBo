@@ -1,6 +1,6 @@
 <?php
 
-require "DBo.php";
+require_once "DBo.php";
 
 class mysqli_log extends mysqli {
 	public static $queries = [];
@@ -22,7 +22,7 @@ class DBoObject extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testCall() {
-	/*
+	/* TODO test
 		$dbo = new DBo("hello");
 		$this->assertAttributeEquals([["table"=>"hello", "params"=>null]], "stack", $dbo);
 	*/
@@ -30,7 +30,7 @@ class DBoObject extends PHPUnit_Framework_TestCase {
 		$dbo = new DBo("hello", "world");
 		$this->assertAttributeEquals([["table"=>"hello", "params"=>"world"]], "stack", $dbo);
 
-	/*
+	/* TODO test
 		$dbo = (new DBo("hello"))->world();
 		$this->assertAttributeEquals([["table"=>"world", "params"=>null], ["table"=>"hello", "params"=>null]], "stack", $dbo);
 	*/

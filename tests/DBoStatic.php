@@ -1,6 +1,6 @@
 <?php
 
-require "DBo.php";
+require_once "DBo.php";
 
 class mysqli_log extends mysqli {
 	public static $queries = [];
