@@ -133,6 +133,16 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(["(1,2,(3,4))"], self::_testEscape([[1,2,[3,4]]]));
 	}
 
+	public function testInit() {
+		$dbo = DBo::init("hello", "world");
+		assertInstanceOf("DBo", $dbo);
+		$this->assertAttributeEquals([["table"=>"hello", "params"=>"world"]], "stack", $dbo);
+
+		$dbo = DBo::hello("world");
+		assertInstanceOf("DBo", $dbo);
+		$this->assertAttributeEquals([["table"=>"hello", "params"=>"world"]], "stack", $dbo);
+	}
+
 	public function testExportSchema() {
 		DBo::exportSchema();
 		$this->assertEquals(file_get_contents("schema.php"), "<?php\n".
