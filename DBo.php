@@ -12,6 +12,34 @@ class DBo {
 
 public static $conn = null;
 
+// join stack
+protected $stack = [];
+
+// forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
+public static function __callStatic($a, $b) {
+	return call_user_func_array([get_called_class(), "init"], func_get_args());
+}
+
+// forward $dbo->SomeTable($args) to DBo::init("SomeTable", $args)
+public function __call($a, $b) {
+	$obj = call_user_func_array([get_class($this), "init"], func_get_args());
+	$obj->stack = array_merge($obj->stack, $this->stack);
+	return $obj;
+}
+
+// do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader
+public static function init($table, $params=null) {
+	if (class_exists("DBo_".$table)) {
+		$class = "DBo_".$table;
+		return new $class($table, $params);
+	}
+	return new self($table, $params);
+}
+
+public function __construct($table, $params=null) {
+	$this->stack = [["table"=>$table, "params"=>$params]];
+}
+
 public static function conn(mysqli $conn) {
 	self::$conn = $conn;
 }
