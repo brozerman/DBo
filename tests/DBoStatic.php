@@ -135,7 +135,7 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 
 	public function testExportSchema() {
 		DBo::exportMeta();
-		$this->assertEquals("", file_get_contents("../schema.php"));
+		$this->assertEquals("", file_get_contents("schema.php"));
 	}
 
 	public function testLoadSchema() {
