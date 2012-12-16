@@ -17,13 +17,15 @@ protected static $schema = null;
 protected $stack = [];
 
 // forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
-public static function __callStatic($a, $b) {
-	return call_user_func_array([get_called_class(), "init"], func_get_args());
+public static function __callStatic($method, $args) {
+	array_unshift($args, $method);
+	return call_user_func_array([get_called_class(), "init"], $args);
 }
 
 // forward $dbo->SomeTable($args) to DBo::init("SomeTable", $args)
-public function __call($a, $b) {
-	$obj = call_user_func_array([get_class($this), "init"], func_get_args());
+public function __call($method, $args) {
+	array_unshift($args, $method);
+	$obj = call_user_func_array([get_class($this), "init"], $args);
 	$obj->stack = array_merge($obj->stack, $this->stack);
 	return $obj;
 }
