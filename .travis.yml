@@ -8,7 +8,7 @@ before_script:
   - phpenv rehash
 
 script:
-  - phpunit --coverage-text tests/*.php
+  - phpunit --coverage-text tests/
   - phpcs --standard=zend --report-width=100 *.php | grep -Ev "\| (Spaces|Line exceeds|Opening brace|Opening parenthesis|Closing parenthesis)|valid camel"
 
 notifications:
