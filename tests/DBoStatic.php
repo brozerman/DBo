@@ -148,6 +148,6 @@ class DBoStatic extends PHPUnit_Framework_TestCase {
 			"pkeys"=>["test"=>["t2"=>["a"]]],
 			"idx"=>["test"=>["t2"=>["a"]]],
 		];
-		$this->assertAttributeEquals($schema, "schema", DBo);		
+		$this->assertAttributeEquals($schema, "schema", "DBo");
 	}
 }
