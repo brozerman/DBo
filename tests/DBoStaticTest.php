@@ -14,7 +14,7 @@ class mysqli_log extends mysqli {
 /**
  * DBo test static methods
  */
-class DBoStatic extends PHPUnit_Framework_TestCase {
+class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public static function setUpBeforeClass() {
 		$db = new mysqli("127.0.0.1", "root", "", "test");

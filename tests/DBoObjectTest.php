@@ -14,7 +14,7 @@ class mysqli_log extends mysqli {
 /**
  * DBo test object methods
  */
-class DBoObject extends PHPUnit_Framework_TestCase {
+class DBoObjectTest extends PHPUnit_Framework_TestCase {
 
 	protected function setUp() {
 		mysqli_log::$queries = [];
