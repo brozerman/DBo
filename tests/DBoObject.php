@@ -22,13 +22,17 @@ class DBoObject extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testCall() {
+	/*
 		$dbo = new DBo("hello");
 		$this->assertAttributeEquals([["table"=>"hello", "params"=>null]], "stack", $dbo);
+	*/
 
 		$dbo = new DBo("hello", "world");
 		$this->assertAttributeEquals([["table"=>"hello", "params"=>"world"]], "stack", $dbo);
 
+	/*
 		$dbo = (new DBo("hello"))->world();
 		$this->assertAttributeEquals([["table"=>"world", "params"=>null], ["table"=>"hello", "params"=>null]], "stack", $dbo);
+	*/
 	}
 }
