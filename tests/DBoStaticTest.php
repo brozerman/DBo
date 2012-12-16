@@ -83,32 +83,43 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testOne() {
 		$row = DBo::one("SELECT * FROM test.t1 WHERE a=3");
 		$this->assertEquals($row, ["a"=>"3", "b"=>"4", "c"=>"cd"]);
+		$row = DBo::one("SELECT * FROM test.t1 WHERE a=?", [3]);
+		$this->assertEquals($row, ["a"=>"3", "b"=>"4", "c"=>"cd"]);
 	}
 
 	public function testObject() {
 		$obj = DBo::object("SELECT * FROM test.t1 WHERE a=3");
+		$this->assertEquals($obj, (object)["a"=>"3", "b"=>"4", "c"=>"cd"]);
+		$obj = DBo::object("SELECT * FROM test.t1 WHERE a=?", [3]);
 		$this->assertEquals($obj, (object)["a"=>"3", "b"=>"4", "c"=>"cd"]);
 	}
 
 	public function testValue() {
 		$value = DBo::value("SELECT a FROM test.t1 WHERE a=3");
 		$this->assertEquals($value, "3");
-		// TODO test params
+		$value = DBo::value("SELECT a FROM test.t1 WHERE a=?", [3]);
+		$this->assertEquals($value, "3");
 	}
 
 	public function testValues() {
 		$values = DBo::values("SELECT a FROM test.t1");
 		$this->assertEquals($values, ["1", "3", "5"]);
+		$values = DBo::values("SELECT a FROM test.t1 WHERE b IN ?", [2,4]);
+		$this->assertEquals($values, ["1", "3"]);
 	}
 
 	public function testKeyValue() {
 		$kv = DBo::keyValue("SELECT a,b FROM test.t1");
 		$this->assertEquals($kv, ["1"=>"2", "3"=>"4", "5"=>"6"]);
+		$kv = DBo::keyValue("SELECT a,b FROM test.t1 WHERE a IN ?", [1,3]);
+		$this->assertEquals($kv, ["1"=>"2", "3"=>"4"]);
 	}
 
 	public function testKeyValues() {
 		$kv = DBo::keyValues("SELECT a,b,c FROM test.t1 LIMIT 2");
 		$this->assertEquals($kv, ["1"=>["b"=>"2", "c"=>"ab"], "3"=>["b"=>"4", "c"=>"cd"]]);
+		$kv = DBo::keyValues("SELECT a,b,c FROM test.t1 WHERE a=?", [1]);
+		$this->assertEquals($kv, ["1"=>["b"=>"2", "c"=>"ab"]]);
 	}
 
 	public function testQueryToText() {
