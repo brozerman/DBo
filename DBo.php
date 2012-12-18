@@ -30,7 +30,7 @@ public function __call($method, $args) {
 	return $obj;
 }
 
-// do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader, loads schema
+// do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader
 public static function init($table, $params=null) {
 	if (class_exists("DBo_".$table)) {
 		$class = "DBo_".$table;
@@ -41,6 +41,7 @@ public static function init($table, $params=null) {
 
 public function __construct($table, $params=null) {
 	$this->stack = [["table"=>$table, "params"=>$params]];
+	// load schema once
 	if (empty(self::$schema)) {
 		require __DIR__."/schema.php";
 		self::$schema = new stdclass();
@@ -207,9 +208,10 @@ public static function exportSchema($exclude_db=["information_schema", "performa
 	}
 	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$idx=".var_export($idx, true).";";
 	$schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
-	file_put_contents(__DIR__."/schema.php", $schema, LOCK_EX);
+	file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
 	$col = null;
-	require "schema.php";
+	require "schema_new.php";
 	if (empty($col)) throw new Exception("Error creating static schema data.");
+	rename("schema_new.php", "schema.php");
 }
 }
