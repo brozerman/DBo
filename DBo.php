@@ -30,7 +30,7 @@ public function __call($method, $args) {
 	return $obj;
 }
 
-// do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader
+// do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader, loads schema
 public static function init($table, $params=null) {
 	if (class_exists("DBo_".$table)) {
 		$class = "DBo_".$table;
@@ -41,6 +41,13 @@ public static function init($table, $params=null) {
 
 public function __construct($table, $params=null) {
 	$this->stack = [["table"=>$table, "params"=>$params]];
+	if (empty(self::$schema)) {
+		require __DIR__."/schema.php";
+		self::$schema = new stdclass();
+		self::$schema->col = &$col;
+		self::$schema->pkey = &$pkey;
+		self::$schema->idx = &$idx;
+	}
 }
 
 public static function conn(mysqli $conn) {
@@ -187,30 +194,22 @@ public static function queryToText($query, $params=null) {
 	return $result;
 }
 
-public static function loadSchema() {
-	require "schema.php";
-	self::$schema = new stdclass();
-	self::$schema->cols = &$cols;
-	self::$schema->pkeys = &$pkeys;
-	self::$schema->idx = &$idx;
-}
-
 public static function exportSchema($exclude_db=["information_schema", "performance_schema", "mysql"]) {
-	$cols = [];
-	$pkeys = [];
+	$col = [];
+	$pkey = [];
 	$idx = [];
 	foreach (self::query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
-		$cols[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+		$col[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
 	}
 	foreach (self::query("SELECT * FROM information_schema.key_column_usage WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
-		if ($row["CONSTRAINT_NAME"] == "PRIMARY") $pkeys[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+		if ($row["CONSTRAINT_NAME"] == "PRIMARY") $pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
 		$idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
 	}
-	$schema = "<?php \$cols=".var_export($cols, true)."; \$pkeys=".var_export($pkeys, true)."; \$idx=".var_export($idx, true).";";
+	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$idx=".var_export($idx, true).";";
 	$schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
-	file_put_contents("schema.php", $schema, LOCK_EX);
-	$cols = null;
+	file_put_contents(__DIR__."/schema.php", $schema, LOCK_EX);
+	$col = null;
 	require "schema.php";
-	if (empty($cols)) throw new Exception("Error creating static schema data.");
+	if (empty($col)) throw new Exception("Error creating static schema data.");
 }
 }
