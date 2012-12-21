@@ -25,7 +25,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	protected function setUp() {
 		mysqli_log::$queries = [];
-		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"));
+		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
 	}
 
 	public function testConn() {
@@ -34,7 +34,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public function testConnException() {
 		$this->setExpectedException("mysqli_sql_exception");
-		DBo::conn(new mysqli("127.0.0.1", "root", "invalid", "test"));
+		DBo::conn(new mysqli("127.0.0.1", "root", "invalid", "test"), "test");
 	}
 
 	public function testBegin() {
@@ -141,6 +141,8 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(["'hello\\rworld\\n!'"], self::_testEscape(["hello\rworld\n!"]));
 		$this->assertEquals(["(1,2,3)"], self::_testEscape([[1,2,3]]));
 		$this->assertEquals(["(1,2,(3,4))"], self::_testEscape([[1,2,[3,4]]]));
+		$this->assertEquals(["a_arr"=>[1,2,3], "a"=>"1,2,3"], self::_testEscape(["a_arr"=>[1,2,3]]));
+		$this->assertEquals(["a_json"=>[1,2,"b"], "a"=>"[1,2,\"b\"]"], self::_testEscape(["a_json"=>[1,2,"b"]]));
 	}
 
 	public function testInit() {
