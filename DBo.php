@@ -8,30 +8,34 @@ mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
  *
  * @see http://we-love-php.blogspot.de/2012/08/how-to-implement-small-and-fast-orm.html
  */
-class DBo {
+class DBo implements IteratorAggregate {
 
 public static $conn = null;
+protected static $conn_db = "";
 protected static $schema = null;
+protected static $usage_col = [];
 
 // join stack
 protected $stack = [];
 
+protected $data = false;
+protected $db = "";
+protected $table = "";
+
 // forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
 public static function __callStatic($method, $args) {
-	array_unshift($args, $method);
-	return call_user_func_array([get_called_class(), "init"], $args);
+	return call_user_func("static::init", $method, $args);
 }
 
 // forward $dbo->SomeTable($args) to DBo::init("SomeTable", $args)
 public function __call($method, $args) {
-	array_unshift($args, $method);
-	$obj = call_user_func_array([get_class($this), "init"], $args);
+	$obj = call_user_func("static::init", $method, $args);
 	$obj->stack = array_merge($obj->stack, $this->stack);
 	return $obj;
 }
 
 // do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader
-public static function init($table, $params=null) {
+public static function init($table, $params=[]) {
 	if (class_exists("DBo_".$table)) {
 		$class = "DBo_".$table;
 		return new $class($table, $params);
@@ -39,8 +43,12 @@ public static function init($table, $params=null) {
 	return new self($table, $params);
 }
 
-public function __construct($table, $params=null) {
-	$this->stack = [["table"=>$table, "params"=>$params]];
+// protected: new DBo("Sales") not instanceof DBo_Sales
+protected function __construct($table, $params) {
+	$this->stack = [(object)["sel"=>"a.*", "table"=>$table, "params"=>$params, "db"=>self::$conn_db]];
+	$this->db = &$this->stack[0]->db;
+	$this->table = &$this->stack[0]->table;
+
 	// load schema once
 	if (empty(self::$schema)) {
 		require __DIR__."/schema.php";
@@ -48,15 +56,185 @@ public function __construct($table, $params=null) {
 		self::$schema->col = &$col;
 		self::$schema->pkey = &$pkey;
 		self::$schema->idx = &$idx;
+		self::$schema->autoinc = &$autoinc;
+	}
+	// TODO improve
+	$this->usage_id = implode(",",array_pop(@debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4)));
+}
+
+public function build_query($op=null) {
+	$from = [];
+	$where = [];
+	foreach ($this->stack as $key=>$elem) {
+		$alias = chr($key+97); // a,b,c...
+		$from[] = $elem->db.".".$elem->table." ".$alias;
+		$pkeys = &self::$schema->pkey[$elem->db][$elem->table];
+
+		$assigned = 0;
+		$break = true;
+		foreach ($elem->params as $i=>$val) { // TODO reference?
+			if (is_numeric($val)) { // pkey given as const
+				$where[] = $alias.".".$pkeys[$i]."=".$val;
+				$assigned++;
+			} else if (is_array($val)) {
+				self::_escape($val);
+				$where[] = $alias.".".$pkeys[$i]." IN ".$val;
+				$assigned++;
+			} else if ($val==null) {
+				$where[] = $alias.".".$pkeys[$i]." IS NULL";
+				$assigned++;
+			} else {
+				$break = false;
+				$where[] = $val; // TODO add $alias add params, escape
+			}
+		}
+		if ($break and count($pkeys)>0 and $assigned==count($pkeys)) break; // TODO check again, custom predicate
+
+		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
+			$where_count = count($where);
+
+			$next = &$this->stack[$key+1];
+			$next_col = &self::$schema->col[$next->db][$next->table];
+			$next_pkeys = &self::$schema->pkey[$next->db][$next->table];
+
+			$join = false;
+			$match = false;
+			foreach ($pkeys as $pkey) {
+				if (isset($next_col[$elem->table."_".$pkey])) {
+					$match = true;
+
+					// join can be skipped, e.g. a.id=42 and a.id=b.some_col
+					$i = array_search($elem->table."_".$pkey, $next_pkeys);
+					if ($i!==false and isset($next->params[$i]) and (is_numeric($next->params[$i]) or $next->params[$i]==null or is_array($next->params[$i]))) {
+						$where[] = $alias.".".$pkey."=".$next->params[$i]; // TODO escape, fix
+					} else {
+						$join = true;
+						$where[] = $alias.".".$pkey."=".chr($key+98).".".$elem->table."_".$pkey;
+					}
+				}
+			}
+			if (!$match) {
+				$col = &self::$schema->col[$elem->db][$elem->table];
+				foreach ($next_pkeys as $i=>$pkey) {
+					if (isset($col[$next->table."_".$pkey])) {
+						// join can be skipped, e.g. a.id=42 and a.id=b.some_col
+						if (isset($next->params[$i]) and (is_numeric($next->params[$i]) or $next->params[$i]==null or is_array($next->params[$i]))) {
+							$where[] = $alias.".".$next->table."_".$pkey."=".$next->params[$i]; // TODO escape, fix
+						} else {
+							$join = true;
+							$where[] = $alias.".".$next->table."_".$pkey."=".chr($key+98).".".$pkey;
+						}
+					}
+				}
+			}
+			if ($where_count == count($where)) throw new Exception("Error: producing cross product");
+			if (!$join) break; // TODO check again, custom predicate
+		}
+	}
+	$query = ($op ?: "SELECT ".$this->stack[0]->sel)." FROM ".implode(",", $from);
+	if ($where) $query .= " WHERE ".implode(" AND ", $where);
+	if (isset($this->stack[0]->limit)) $query .= " LIMIT ".$this->stack[0]->limit;
+	return $query;
+}
+
+public function __get($name) {
+	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
+	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return null;
+
+	// TODO _arr, _json
+	if ($this->data===false)	{
+		// TODO add option to disable usage_col
+		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
+			$this->select(array_keys(self::$usage_col[$this->usage_id]));
+		}
+		$this->data = self::$conn->query($this->build_query())->fetch_assoc();
+	}
+	self::$usage_col[$this->usage_id][$name] = 1;
+	$this->$name = $this->data[$name];
+	return $this->$name;
+}
+
+public function setFrom($arr) {
+	foreach ($arr as $key=>$val) $this->$key = $val;
+	return $this;
+}
+
+public function save($key=null, $value=false) {
+	if ($key!=null) {
+		if (!is_array($key)) $this->$key = $value; else $this->setFrom($arr);
+	}
+	$data = array_intersect_key(get_object_vars($this), self::$schema->col[$this->db][$this->table]);
+	self::_escape($data);
+	foreach ($data as $key=>$value) {
+		if ($value===false) $data[$key] = $key; else $data[$key] = $key."=".$value;
+	}
+	$pkey = self::$schema->pkey[$this->db][$this->table][0];
+	if (!empty($data->$pkey)) { // pkey given as const
+		// TODO define primary key
+		// TODO fix field=null
+		// TODO multi-table update
+		return self::query("UPDATE ".$this->db.".".$this->table." SET ".implode(",", $data)." WHERE ");
+	} else {
+		$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
+		if ($field = self::$schema->autoinc[$this->db][$this->table]) $this->$field = $id;
+		return $id;
 	}
 }
 
-public static function conn(mysqli $conn) {
+public function exists() {
+	$pkey = self::$schema->pkey[$this->db][$this->table][0];
+	$var = $this->$pkey; // TODO improve
+	return isset($var);
+}
+
+public function count() {
+	return self::value($this->build_query("SELECT count(*)"));
+}
+
+public function delete() {
+	return self::query($this->build_query("DELETE"));
+}
+
+public function __toString() {
+	return self::queryToText("explain ".$this->build_query());
+}
+
+public function print_r() {
+	foreach (self::$conn->query($this->build_query()) as $item) print_r($item);
+}
+
+public function db($database) {
+	$this->stack[0]->db = $database;
+	return $this;
+}
+
+public function limit($count) {
+	$this->stack[0]->limit = $count;
+	return $this;
+}
+
+// TODO document
+public function select(array $cols) {
+	$this->stack[0]->sel = "a.".implode(",a.", $cols);
+	return $this;
+}
+
+public function getIterator() {
+	// TODO use generator from PHP 5.5
+	return new DBo_(self::$conn->query($this->build_query()), $this->db, $this->table);
+}
+
+public static function conn(mysqli $conn, $db) {
 	self::$conn = $conn;
+	self::$conn_db = $db;
 }
 
 private static function _escape(&$params) {
 	foreach ($params as $key=>$param) {
+		// TODO preg_match?
+		if (strpos($key, "_arr")==strlen($key)-4) $params[substr($key, 0, -4)] = implode(",", $param);
+			else if (strpos($key, "_json")==strlen($key)-5) $params[substr($key, 0, -5)] = json_encode($param);
+
 		if (is_array($param)) {
 			self::_escape($param);
 			$params[$key] = "(".implode(",", $param).")";
@@ -88,12 +266,13 @@ public static function one($query, $params=null) {
 	return self::$conn->query($query)->fetch_assoc();
 }
 
-public static function object($query, $params=null) {
+// TODO document
+public static function object($table, $query, $params=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
 	}
-	return self::$conn->query($query)->fetch_object();
+	return new DBo_(self::$conn->query($query), self::$conn_db, $table);
 }
 
 public static function keyValue($query, $params=null) {
@@ -146,7 +325,7 @@ public static function values($query, $params=null) {
 	}
 	$return = [];
 	$result = self::$conn->query($query);
-	while ($row = $result->fetch_row()[0]) $return[] = $row;
+	while ($value = $result->fetch_row()[0]) $return[] = $value;
 	return $return;
 }
 
@@ -198,15 +377,15 @@ public static function queryToText($query, $params=null) {
 public static function exportSchema($exclude_db=["information_schema", "performance_schema", "mysql"]) {
 	$col = [];
 	$pkey = [];
+	$autoinc = [];
 	$idx = [];
 	foreach (self::query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
 		$col[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+		if ($row["COLUMN_KEY"] == "PRI") $pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+		if ($row["COLUMN_KEY"] != "") $idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+		if ($row["EXTRA"] == "auto_increment") $autoinc[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ] = $row["COLUMN_NAME"];
 	}
-	foreach (self::query("SELECT * FROM information_schema.key_column_usage WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
-		if ($row["CONSTRAINT_NAME"] == "PRIMARY") $pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
-		$idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
-	}
-	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$idx=".var_export($idx, true).";";
+	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$idx=".var_export($idx, true)."; \$autoinc=".var_export($autoinc, true).";";
 	$schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
 	file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
 	$col = null;
@@ -215,3 +394,29 @@ public static function exportSchema($exclude_db=["information_schema", "performa
 	rename("schema_new.php", "schema.php");
 }
 }
+
+class DBo_ extends IteratorIterator {
+	public function __construct (Traversable $iterator, $db, $table) {
+		parent::__construct($iterator);
+		$this->db = $db;
+		$this->table = $table;
+	}
+
+	public function current() {
+		return DBo::init($this->table)->setFrom(parent::current())->db($this->db);
+	}
+}
+
+/* TODO implement
+$payments = DBo::Categories()->cache(60);
+// [{id=>0, name=>Sports}, {id=>1, name=>Movies}, ...]
+
+$payments = DBo::Categories()->array(60);
+// [[id=>0, name=>Sports], [id=>1, name=>Movies], ...]
+
+$payments = DBo::Categories()->values("col_name", 60);
+// [Sports, Movies, ...]
+
+$payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
+// [0=>Sports, 1=>Movies, ...]
+*/
