@@ -154,6 +154,10 @@ public function __get($name) {
 	return $this->$name;
 }
 
+public function __toString() {
+	return self::queryToText("explain ".$this->build_query());
+}
+
 public function setFrom($arr) {
 	foreach ($arr as $key=>$val) $this->$key = $val;
 	return $this;
@@ -195,10 +199,6 @@ public function delete() {
 	return self::query($this->build_query("DELETE"));
 }
 
-public function __toString() {
-	return self::queryToText("explain ".$this->build_query());
-}
-
 public function print_r() {
 	foreach (self::$conn->query($this->build_query()) as $item) print_r($item);
 }
@@ -220,7 +220,7 @@ public function select(array $cols) {
 }
 
 public function getIterator() {
-	// TODO use generator from PHP 5.5
+	// TODO use generator from PHP 5.5 ?
 	return new DBo_(self::$conn->query($this->build_query()), $this->db, $this->table);
 }
 
