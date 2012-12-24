@@ -81,9 +81,8 @@ public function build_query($op=null) {
 				$where[] = "(".$alias.".".implode(",".$alias.".", $pkeys).") IN (".implode(",", $param).")";
 			} else if (is_array($param)) {
 				self::_escape($param);
-				foreach ($param as $k=>$v) $where[] = $alias.".".$k.($v[0]=="("?" IN ":"=").$v;
-				// TODO implement
-//				if (count(array_unique(array_keys($param), $pkeys)) != count($pkeys)) $skip_join = false;
+				foreach ($param as $k=>$v) $where[] = $alias.".".$k.($v[0]=="(" ? " IN " : "=").$v;
+				if (array_diff_key($param, array_flip($pkeys))) $skip_join = false;
 			} else {
 				if (count($elem->params)>$i+1) {
 					$params = array_slice($elem->params, $i+1);
@@ -96,7 +95,7 @@ public function build_query($op=null) {
 				break;
 			}
 		}
-		//if ($skip_join and count($pkeys)>0 and current($pkeys)===false) break; // TODO check again
+		// if ($skip_join and count($elem->params)>0) break; // TODO check again
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
 			$where_count = count($where);
