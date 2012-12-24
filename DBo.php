@@ -70,25 +70,33 @@ public function build_query($op=null) {
 		$from[] = $elem->db.".".$elem->table." ".$alias;
 		$pkeys = &self::$schema->pkey[$elem->db][$elem->table];
 
-		$assigned = 0;
-		$break = true;
-		foreach ($elem->params as $i=>$val) { // TODO reference?
-			if (is_numeric($val)) { // pkey given as const
-				$where[] = $alias.".".$pkeys[$i]."=".$val;
-				$assigned++;
-			} else if (is_array($val)) {
-				self::_escape($val);
-				$where[] = $alias.".".$pkeys[$i]." IN ".$val;
-				$assigned++;
-			} else if ($val==null) {
-				$where[] = $alias.".".$pkeys[$i]." IS NULL";
-				$assigned++;
+		$skip_join = true;
+		foreach ($elem->params as $i=>$param) { // TODO reference?
+			if ($param==="0" or $param===0) {
+				$where[] = $alias.".".$pkeys[0]."='0'";
+			} else if (is_numeric($param)) { // pkey given as const
+				$where[] = $alias.".".$pkeys[0]."=".$param;
+			} else if (is_array($param) and is_numeric(key($param))) {
+				self::_escape($param);
+				$where[] = "(".$alias.".".implode(",".$alias.".", $pkeys).") IN (".implode(",", $param).")";
+			} else if (is_array($param)) {
+				self::_escape($param);
+				foreach ($param as $k=>$v) $where[] = $alias.".".$k.($v[0]=="("?" IN ":"=").$v;
+				// TODO implement
+//				if (count(array_unique(array_keys($param), $pkeys)) != count($pkeys)) $skip_join = false;
 			} else {
-				$break = false;
-				$where[] = str_replace("@", $alias.".", $val); // TODO add params+escape
+				if (count($elem->params)>$i+1) {
+					$params = array_slice($elem->params, $i+1);
+					self::_escape($params);
+					$where[] = vsprintf(str_replace(["@","?"], [$alias.".","%s"], $param), $params);
+				} else {
+					$where[] = str_replace("@", $alias.".", $param);
+				}
+				$skip_join = false;
+				break;
 			}
 		}
-		//if ($break and count($pkeys)>0 and $assigned==count($pkeys)) break; // TODO check again
+		//if ($skip_join and count($pkeys)>0 and current($pkeys)===false) break; // TODO check again
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
 			$where_count = count($where);
@@ -241,8 +249,8 @@ public static function conn(mysqli $conn, $db) {
 private static function _escape(&$params) {
 	foreach ($params as $key=>$param) {
 		// TODO preg_match?
-		if (strpos($key, "_arr")==strlen($key)-4) $params[substr($key, 0, -4)] = implode(",", $param);
-			else if (strpos($key, "_json")==strlen($key)-5) $params[substr($key, 0, -5)] = json_encode($param);
+		if (strpos($key, "_arr")===strlen($key)-4) $params[substr($key, 0, -4)] = implode(",", $param);
+			else if (strpos($key, "_json")===strlen($key)-5) $params[substr($key, 0, -5)] = json_encode($param);
 
 		if (is_array($param)) {
 			self::_escape($param);
@@ -431,6 +439,6 @@ $payments = DBo::Categories()->values("col_name", 60);
 $payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
 // [0=>Sports, 1=>Movies, ...]
 
-DBo::sale(10)->salepos()->logistics('shipped=1')->parent()->save('complete', 1); // good
+DBo::sale(10)->salepos()->logistics('shipped=1')->parent()->save('complete', 1);
 
 */
