@@ -146,9 +146,14 @@ public function build_query($op=null) {
 
 public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
-	// TODO _arr, _json
+	if (strpos($name, "arr_")===0) {
+		$this->$name = explode(",", $this->__get(substr($name, 4)));
+		return $this->$name;
+	} else if (strpos($name, "json_")===0) {
+		$this->$name = json_decode($this->__get(substr($name, 5)), true);
+		return $this->$name;
+	}
 	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
-
 	if ($this->data===false) {
 		// TODO2 add option to disable usage_col
 		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
@@ -166,17 +171,21 @@ public function __toString() {
 }
 
 public function setFrom($arr) {
-	// TODO set primaries as param
 	foreach ($arr as $key=>$val) $this->$key = $val;
+	// TODO optimize
+	$pkeys = &self::$schema->pkey[$this->db][$this->table];
+	foreach ($pkeys as $pkey) if (isset($arr[$pkey])) $this->stack[0]->params[] = [$pkey=>$arr[$pkey]];
 	return $this;
 }
 
 public function save($key=null, $value=false) {
 	if ($key!=null) {
-		if (!is_array($key)) $this->$key = $value; else $this->setFrom($arr);
+		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
+	// TODO fix _arr, _json
 	$data = array_intersect_key(get_object_vars($this), self::$schema->col[$this->db][$this->table]);
 	self::_escape($data);
+
 	foreach ($data as $key=>$value) {
 		if ($value===false) $data[$key] = $key; else $data[$key] = $key."=".$value;
 	}
@@ -250,9 +259,9 @@ public static function conn(mysqli $conn, $db) {
 
 private static function _escape(&$params) {
 	foreach ($params as $key=>$param) {
-		// TODO2 preg_match?
-		if (strpos($key, "_arr")===strlen($key)-4) $params[substr($key, 0, -4)] = implode(",", $param);
-			else if (strpos($key, "_json")===strlen($key)-5) $params[substr($key, 0, -5)] = json_encode($param);
+		// TODO preg_match? move to save?
+		if (strpos($key, "arr_")===0) $params[substr($key, 4)] = implode(",", $param);
+			else if (strpos($key, "json_")===0) $params[substr($key, 5)] = json_encode($param);
 
 		if (is_array($param)) {
 			self::_escape($param);
@@ -261,7 +270,7 @@ private static function _escape(&$params) {
 			$params[$key] = "NULL";
 		} else if ($param==="0" or $param===0) {
 			$params[$key] = "'0'";
-		} else if (!is_numeric($param)) {
+		} else if ($param!==false and !is_numeric($param)) {
 			$params[$key] = "'".self::$conn->real_escape_string($param)."'";
 }	}	}
 
@@ -424,7 +433,7 @@ class DBo_ extends IteratorIterator {
 	}
 
 	public function current() {
-		return DBo::init($this->table)->setFrom(parent::current())->db($this->db);
+		return DBo::init($this->table)->db($this->db)->setFrom(parent::current());
 	}
 }
 
@@ -443,4 +452,5 @@ $payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
 
 DBo::sale(10)->salepos()->logistics('shipped=1')->parent()->save('complete', 1);
 
+DBo::Guestbook(42)->save('likes=likes+1');
 */
