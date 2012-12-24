@@ -71,7 +71,7 @@ public function build_query($op=null) {
 		$pkeys = &self::$schema->pkey[$elem->db][$elem->table];
 
 		$skip_join = true;
-		foreach ($elem->params as $i=>$param) { // TODO reference?
+		foreach ($elem->params as $i=>$param) { // TODO2 reference?
 			if ($param==="0" or $param===0) {
 				$where[] = $alias.".".$pkeys[0]."='0'";
 			} else if (is_numeric($param)) { // pkey given as const
@@ -146,11 +146,11 @@ public function build_query($op=null) {
 
 public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
+	// TODO _arr, _json
 	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
 
-	// TODO _arr, _json
 	if ($this->data===false) {
-		// TODO add option to disable usage_col
+		// TODO2 add option to disable usage_col
 		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
 			$this->select(array_keys(self::$usage_col[$this->usage_id]));
 		}
@@ -181,10 +181,13 @@ public function save($key=null, $value=false) {
 		if ($value===false) $data[$key] = $key; else $data[$key] = $key."=".$value;
 	}
 	$pkey = self::$schema->pkey[$this->db][$this->table][0];
-	if (!empty($data->$pkey)) { // pkey given as const
-		// TODO define primary key
-		// TODO fix field=null
-		// TODO multi-table update
+	if (!empty($data->$pkey)) { // pkey given
+		// TODO implement multi-table update join
+		/*
+		select a.* from bla where x=y
+		update bla set a=b where x=y
+		$this->build_query("UPDATE");
+		*/
 		return self::query("UPDATE ".$this->db.".".$this->table." SET ".implode(",", $data)." WHERE ");
 	} else {
 		$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
@@ -234,7 +237,7 @@ public function select(array $cols) {
 }
 
 public function getIterator() {
-	// TODO 2 use generator from PHP 5.5 ?
+	// TODO2 use generator from PHP 5.5 ?
 	$result = self::$conn->query($this->build_query());
 	$meta = $result->fetch_field();
 	return new DBo_($result, $meta->db, $meta->orgtable);
@@ -247,7 +250,7 @@ public static function conn(mysqli $conn, $db) {
 
 private static function _escape(&$params) {
 	foreach ($params as $key=>$param) {
-		// TODO preg_match?
+		// TODO2 preg_match?
 		if (strpos($key, "_arr")===strlen($key)-4) $params[substr($key, 0, -4)] = implode(",", $param);
 			else if (strpos($key, "_json")===strlen($key)-5) $params[substr($key, 0, -5)] = json_encode($param);
 
