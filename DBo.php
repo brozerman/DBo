@@ -50,7 +50,7 @@ protected function __construct($table, $params) {
 	$this->table = &$this->stack[0]->table;
 
 	// load schema once
-	if (empty(self::$schema)) {
+	if (self::$schema==null) {
 		require __DIR__."/schema.php";
 		self::$schema = new stdclass();
 		self::$schema->col = &$col;
@@ -58,8 +58,8 @@ protected function __construct($table, $params) {
 		self::$schema->idx = &$idx;
 		self::$schema->autoinc = &$autoinc;
 	}
-	// TODO improve
-	$this->usage_id = implode(",",array_pop(@debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4)));
+	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+	$this->usage_id = implode(",", end($trace));
 }
 
 public function build_query($op=null) {
@@ -85,10 +85,10 @@ public function build_query($op=null) {
 				$assigned++;
 			} else {
 				$break = false;
-				$where[] = $val; // TODO add $alias add params, escape
+				$where[] = str_replace("@", $alias.".", $val); // TODO add params+escape
 			}
 		}
-		if ($break and count($pkeys)>0 and $assigned==count($pkeys)) break; // TODO check again, custom predicate
+		//if ($break and count($pkeys)>0 and $assigned==count($pkeys)) break; // TODO check again
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
 			$where_count = count($where);
@@ -139,10 +139,10 @@ public function build_query($op=null) {
 
 public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
-	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return null;
+	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
 
 	// TODO _arr, _json
-	if ($this->data===false)	{
+	if ($this->data===false) {
 		// TODO add option to disable usage_col
 		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
 			$this->select(array_keys(self::$usage_col[$this->usage_id]));
@@ -159,6 +159,7 @@ public function __toString() {
 }
 
 public function setFrom($arr) {
+	// TODO set primaries as param
 	foreach ($arr as $key=>$val) $this->$key = $val;
 	return $this;
 }
@@ -187,7 +188,7 @@ public function save($key=null, $value=false) {
 
 public function exists() {
 	$pkey = self::$schema->pkey[$this->db][$this->table][0];
-	$var = $this->$pkey; // TODO improve
+	$var = $this->$pkey;
 	return isset($var);
 }
 
@@ -213,15 +214,23 @@ public function limit($count) {
 	return $this;
 }
 
-// TODO document
+public function parent() {
+// TODO implement
+	$this->stack[0]->sel++;
+	return $this;
+}
+
+// TODO2 document
 public function select(array $cols) {
 	$this->stack[0]->sel = "a.".implode(",a.", $cols);
 	return $this;
 }
 
 public function getIterator() {
-	// TODO use generator from PHP 5.5 ?
-	return new DBo_(self::$conn->query($this->build_query()), $this->db, $this->table);
+	// TODO 2 use generator from PHP 5.5 ?
+	$result = self::$conn->query($this->build_query());
+	$meta = $result->fetch_field();
+	return new DBo_($result, $meta->db, $meta->orgtable);
 }
 
 public static function conn(mysqli $conn, $db) {
@@ -266,13 +275,15 @@ public static function one($query, $params=null) {
 	return self::$conn->query($query)->fetch_assoc();
 }
 
-// TODO document
-public static function object($table, $query, $params=null) {
+// TODO2 document
+public static function object($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
 	}
-	return new DBo_(self::$conn->query($query), self::$conn_db, $table);
+	$result = self::$conn->query($query);
+	$meta = $result->fetch_field();
+	return new DBo_($result, $meta->db, $meta->orgtable);
 }
 
 public static function keyValue($query, $params=null) {
@@ -419,4 +430,7 @@ $payments = DBo::Categories()->values("col_name", 60);
 
 $payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
 // [0=>Sports, 1=>Movies, ...]
+
+DBo::sale(10)->salepos()->logistics('shipped=1')->parent()->save('complete', 1); // good
+
 */
