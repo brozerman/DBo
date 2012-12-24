@@ -146,6 +146,7 @@ public function build_query($op=null) {
 
 public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
+	// TODO2 strncmp($haystack,$needle,$needle_len) === 0
 	if (strpos($name, "arr_")===0) {
 		$this->$name = explode(",", $this->__get(substr($name, 4)));
 		return $this->$name;
@@ -182,8 +183,18 @@ public function save($key=null, $value=false) {
 	if ($key!=null) {
 		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
-	// TODO fix _arr, _json
-	$data = array_intersect_key(get_object_vars($this), self::$schema->col[$this->db][$this->table]);
+	$data = [];
+	foreach (get_object_vars($this) as $key=>$param) {
+		// TODO2 strncmp($haystack,$needle,$needle_len) === 0
+		if (strpos($key, "arr_")===0) {
+			$param = implode(",", $param);
+			$key = substr($key, 4);
+		} else if (strpos($key, "json_")===0) {
+			$param = json_encode($param);
+			$key = substr($key, 5);
+		}
+		if (isset(self::$schema->col[$this->db][$this->table][$key])) $data[$key] = $param;
+	}
 	self::_escape($data);
 
 	foreach ($data as $key=>$value) {
@@ -259,10 +270,6 @@ public static function conn(mysqli $conn, $db) {
 
 private static function _escape(&$params) {
 	foreach ($params as $key=>$param) {
-		// TODO preg_match? move to save?
-		if (strpos($key, "arr_")===0) $params[substr($key, 4)] = implode(",", $param);
-			else if (strpos($key, "json_")===0) $params[substr($key, 5)] = json_encode($param);
-
 		if (is_array($param)) {
 			self::_escape($param);
 			$params[$key] = "(".implode(",", $param).")";
