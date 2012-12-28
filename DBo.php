@@ -472,16 +472,14 @@ class DBo_ extends IteratorIterator {
 		$this->db = $db;
 		$this->table = $table;
 	}
-
 	public function current() {
 		return DBo::init($this->table)->db($this->db)->setFrom(parent::current());
 	}
 }
 
-// TODO2 optimize
+// TODO2 optimize => RFC?
 class DBo_Helper {
-
-public static function getPublicVars($obj) {
-	return get_object_vars($obj);
-}
+	public static function getPublicVars($obj) {
+		return get_object_vars($obj);
+	}
 }
