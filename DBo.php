@@ -176,7 +176,7 @@ public function __get($name) {
 
 public function __toString() {
 	// TODO2 optimize
-	// PHP cannot throw exceptions in __toString()
+	// @see http://stackoverflow.com/questions/2429642/why-its-impossible-to-throw-exception-from-tostring
 	try {
 		return self::queryToText("explain ".$this->buildQuery());
 	}
