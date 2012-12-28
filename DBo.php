@@ -4,7 +4,7 @@
 mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
 
 /**
- * DBo Efficient ORM
+ * DBo efficient ORM
  *
  * @see http://we-love-php.blogspot.de/2012/08/how-to-implement-small-and-fast-orm.html
  */
@@ -21,6 +21,7 @@ protected $stack = [];
 protected $data = false;
 protected $db = "";
 protected $table = "";
+protected $usage_id = false;
 
 // forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
 public static function __callStatic($method, $args) {
@@ -62,9 +63,10 @@ protected function __construct($table, $params) {
 	$this->usage_id = implode(",", end($trace));
 }
 
-public function build_query($op=null) {
+public function buildQuery($op=null, $sel=null, $set=null) {
 	$from = [];
 	$where = [];
+	$got_pkey = [];
 	foreach ($this->stack as $key=>$elem) {
 		$alias = chr($key+97); // a,b,c...
 		$from[] = $elem->db.".".$elem->table." ".$alias;
@@ -76,6 +78,8 @@ public function build_query($op=null) {
 				$where[] = $alias.".".$pkeys[0]."='0'";
 			} else if (is_numeric($param)) { // pkey given as const
 				$where[] = $alias.".".$pkeys[0]."=".$param;
+			} else if ($param===null) {
+				$where[] = $alias.".".$pkeys[0]." IS NULL";
 			} else if (is_array($param) and is_numeric(key($param))) {
 				self::_escape($param);
 				$where[] = "(".$alias.".".implode(",".$alias.".", $pkeys).") IN (".implode(",", $param).")";
@@ -95,7 +99,8 @@ public function build_query($op=null) {
 				break;
 			}
 		}
-		// if ($skip_join and count($elem->params)>0) break; // TODO check again
+		if ($skip_join and !$got_pkey and count($elem->params)>0) $got_pkey = [$key+1, count($where)];
+		if ($got_pkey and !$skip_join) $got_pkey = [$key+1, count($where)];
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
 			$where_count = count($where);
@@ -109,36 +114,37 @@ public function build_query($op=null) {
 			foreach ($pkeys as $pkey) {
 				if (isset($next_col[$elem->table."_".$pkey])) {
 					$match = true;
-
 					// join can be skipped, e.g. a.id=42 and a.id=b.some_col
-					$i = array_search($elem->table."_".$pkey, $next_pkeys);
-					if ($i!==false and isset($next->params[$i]) and (is_numeric($next->params[$i]) or $next->params[$i]==null or is_array($next->params[$i]))) {
-						$where[] = $alias.".".$pkey."=".$next->params[$i]; // TODO escape, fix
+					if (isset($next->params[$elem->table."_".$pkey])) { // TODO implement
+						$where[] = $alias.".".$pkey.$next->params[$elem->table."_".$pkey];
 					} else {
 						$join = true;
 						$where[] = $alias.".".$pkey."=".chr($key+98).".".$elem->table."_".$pkey;
-					}
-				}
-			}
+			}	}	}
 			if (!$match) {
 				$col = &self::$schema->col[$elem->db][$elem->table];
-				foreach ($next_pkeys as $i=>$pkey) {
+				foreach ($next_pkeys as $pkey) {
 					if (isset($col[$next->table."_".$pkey])) {
 						// join can be skipped, e.g. a.id=42 and a.id=b.some_col
-						if (isset($next->params[$i]) and (is_numeric($next->params[$i]) or $next->params[$i]==null or is_array($next->params[$i]))) {
-							$where[] = $alias.".".$next->table."_".$pkey."=".$next->params[$i]; // TODO escape, fix
+						if (isset($next->params[$pkey])) { // TODO implement
+							$where[] = $alias.".".$next->table."_".$pkey.$next->params[$pkey];
 						} else {
 							$join = true;
 							$where[] = $alias.".".$next->table."_".$pkey."=".chr($key+98).".".$pkey;
-						}
-					}
-				}
-			}
+			}	}	}	}
 			if ($where_count == count($where)) throw new Exception("Error: producing cross product");
-			if (!$join) break; // TODO check again, custom predicate
+			if (!$join and !$got_pkey and count($where)-$where_count==count($pkeys)) $got_pkey = [$key+1, count($where)];
 		}
 	}
-	$query = ($op ?: "SELECT ".$this->stack[0]->sel)." FROM ".implode(",", $from);
+	if ($got_pkey) {
+		$from = array_slice($from, 0, $got_pkey[0]);
+		$where = array_slice($where, 0, $got_pkey[1]);
+	}
+	if ($op=="UPDATE") {
+		$query = "UPDATE ".implode(",", $from)." SET ".$set;
+	} else {
+		$query = ($op ?: "SELECT")." ".($sel ?: $this->stack[0]->sel)." FROM ".implode(",", $from);
+	}
 	if ($where) $query .= " WHERE ".implode(" AND ", $where);
 	if (isset($this->stack[0]->limit)) $query .= " LIMIT ".$this->stack[0]->limit;
 	return $query;
@@ -159,15 +165,24 @@ public function __get($name) {
 		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
 			$this->select(array_keys(self::$usage_col[$this->usage_id]));
 		}
-		$this->data = self::$conn->query($this->build_query())->fetch_assoc();
+		$this->stack[0]->limit = 1;
+		$this->data = self::$conn->query($this->buildQuery())->fetch_assoc();
 	}
 	self::$usage_col[$this->usage_id][$name] = 1;
+	// TODO2 load/store usage_col in apc
 	$this->$name = $this->data[$name];
 	return $this->$name;
 }
 
 public function __toString() {
-	return self::queryToText("explain ".$this->build_query());
+	// TODO2 optimize
+	// PHP cannot throw exceptions in __toString()
+	try {
+		return self::queryToText("explain ".$this->buildQuery());
+	}
+	catch (Exception $e) {
+		trigger_error($e, E_USER_ERROR);
+	}
 }
 
 public function setFrom($arr) {
@@ -182,32 +197,32 @@ public function save($key=null, $value=false) {
 	if ($key!=null) {
 		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
-	$data = [];
-	// TODO2 check array_intersect
-	foreach (get_object_vars($this) as $key=>$param) {
-		if (strpos($key, "arr_")===0) {
-			$param = implode(",", $param);
-			$key = substr($key, 4);
-		} else if (strpos($key, "json_")===0) {
-			$param = json_encode($param);
-			$key = substr($key, 5);
+	$data = DBo_Helper::getPublicVars($this);
+	foreach ($data as $key=>$value) {
+		if ($value!==false) {
+			if (strpos($key, "arr_")===0) {
+				unset($data[$key]);
+				$key = substr($key, 4);
+				$data[$key] = implode(",", $value);
+			} else if (strpos($key, "json_")===0) {
+				unset($data[$key]);
+				$key = substr($key, 5);
+				$data[$key] = json_encode($value);
+			}
+			// TODO2 document
+			if (method_exists($this, "set_".$key)) $data[$key] = $this->{"set_".$key}($value);
+			if (!isset(self::$schema->col[$this->db][$this->table][$key])) unset($data[$key]);
 		}
-		if (isset(self::$schema->col[$this->db][$this->table][$key])) $data[$key] = $param;
 	}
 	self::_escape($data);
-
 	foreach ($data as $key=>$value) {
-		if ($value===false) $data[$key] = $key; else $data[$key] = $key."=".$value;
+		if ($value===false) $data[$key] = str_replace("@", "a.", $key); else $data[$key] = "a.".$key."=".$value;
 	}
-	$pkey = self::$schema->pkey[$this->db][$this->table][0];
-	if (!empty($data->$pkey)) { // pkey given
-		// TODO implement multi-table update join
-		/*
-		select a.* from bla where x=y
-		update bla set a=b where x=y
-		$this->build_query("UPDATE");
-		*/
-		return self::query("UPDATE ".$this->db.".".$this->table." SET ".implode(",", $data)." WHERE ");
+	$pkeys = self::$schema->pkey[$this->db][$this->table];
+
+	// TODO fix
+	if (true or !array_diff_key(array_flip($pkeys), $data)) { // pkeys given
+		return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
 	} else {
 		$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
 		if ($field = self::$schema->autoinc[$this->db][$this->table]) $this->$field = $id;
@@ -222,15 +237,15 @@ public function exists() {
 }
 
 public function count() {
-	return self::value($this->build_query("SELECT count(*)"));
+	return self::value($this->buildQuery("SELECT", "count(*)"));
 }
 
 public function delete() {
-	return self::query($this->build_query("DELETE"));
+	return self::query($this->buildQuery("DELETE"));
 }
 
 public function print_r() {
-	foreach (self::$conn->query($this->build_query()) as $item) print_r($item);
+	foreach (self::$conn->query($this->buildQuery()) as $item) print_r($item);
 }
 
 public function db($database) {
@@ -238,14 +253,8 @@ public function db($database) {
 	return $this;
 }
 
-public function limit($count) {
-	$this->stack[0]->limit = $count;
-	return $this;
-}
-
-public function parent() {
-// TODO implement
-	$this->stack[0]->sel++;
+public function limit($count, $offset=0) {
+	$this->stack[0]->limit = $offset." ".$count;
 	return $this;
 }
 
@@ -257,7 +266,7 @@ public function select(array $cols) {
 
 public function getIterator() {
 	// TODO2 use generator from PHP 5.5 ?
-	$result = self::$conn->query($this->build_query());
+	$result = self::$conn->query($this->buildQuery());
 	$meta = $result->fetch_field();
 	return new DBo_($result, $meta->db, $meta->orgtable);
 }
@@ -300,7 +309,6 @@ public static function one($query, $params=null) {
 	return self::$conn->query($query)->fetch_assoc();
 }
 
-// TODO2 document
 public static function object($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
@@ -363,6 +371,33 @@ public static function values($query, $params=null) {
 	$result = self::$conn->query($query);
 	while ($value = $result->fetch_row()[0]) $return[] = $value;
 	return $return;
+}
+
+
+/*
+TODO implement
+$payments = DBo::Categories()->cache(60);
+// [{id=>0, name=>Sports}, {id=>1, name=>Movies}, ...]
+
+$payments = DBo::Categories()->array(60);
+// [[id=>0, name=>Sports], [id=>1, name=>Movies], ...]
+
+$payments = DBo::Categories()->values("col_name", 60);
+// [Sports, Movies, ...]
+
+$payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
+// [0=>Sports, 1=>Movies, ...]
+
+$id = DBo::query('INSERT INTO guestbook VALUES (...)'); // LastInsert ID
+$subject = DBo::value('SELECT subject FROM guestbook WHERE id=42'); // String
+$row = DBo::keyValue('SELECT id,title FROM guestbook'); // Array
+$row = DBo::keyValues('SELECT id,title,subject FROM guestbook'); // Array
+*/
+
+// TODO change get prefix
+public function get_values($column, $cache=null) {
+	// TODO implement select only first column
+	return self::values($this->buildQuery());
 }
 
 /* PHP 5.5
@@ -443,20 +478,10 @@ class DBo_ extends IteratorIterator {
 	}
 }
 
-/* TODO implement
-$payments = DBo::Categories()->cache(60);
-// [{id=>0, name=>Sports}, {id=>1, name=>Movies}, ...]
+// TODO2 optimize
+class DBo_Helper {
 
-$payments = DBo::Categories()->array(60);
-// [[id=>0, name=>Sports], [id=>1, name=>Movies], ...]
-
-$payments = DBo::Categories()->values("col_name", 60);
-// [Sports, Movies, ...]
-
-$payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
-// [0=>Sports, 1=>Movies, ...]
-
-DBo::sale(10)->salepos()->logistics('shipped=1')->parent()->save('complete', 1);
-
-DBo::Guestbook(42)->save('likes=likes+1');
-*/
+public static function getPublicVars($obj) {
+	return get_object_vars($obj);
+}
+}
