@@ -354,7 +354,7 @@ public static function keyValue($query, $params=null, $cache=null) {
 	return $return;
 }
 
-public function keyValueO($column_key, $column_value, $cache=null) {
+public function okeyValue($column_key, $column_value, $cache=null) {
 	$this->stack[0]->sel = "a.".$column_key.", a.".$column_value;
 	return self::keyValue($this->buildQuery(), null, $cache);
 }
@@ -369,10 +369,6 @@ public static function keyValues($query, $params=null, $cache=null) {
 	while ($row = $result->fetch_assoc()) $return[array_shift($row)] = $row;
 	// TODO cache
 	return $return;
-}
-
-public function keyValuesO($cache=null) {
-	return self::keyValues($this->buildQuery(), null, $cache);
 }
 
 /* value(query, param1, param2, ...)
@@ -408,13 +404,13 @@ public static function values($query, $params=null, $cache=null) {
 	return $return;
 }
 
-public function valuesO($column, $cache=null) {
+public function ovalues($column, $cache=null) {
 	$this->stack[0]->sel = "a.".$column; // TODO distinct?
 	return self::values($this->buildQuery(), null, $cache);
 }
 
 public function cache($cache=null) {
-	// TODO implement, cache
+	// TODO implement, cache, static cache() ?
 	$result = [];
 	foreach ($this->getIterator() as $row) $result[] = $row;
 	return $result;
