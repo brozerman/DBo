@@ -317,7 +317,7 @@ public static function query($query, $params=null) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
 	}
-	if (preg_match('!^(?:insert|update|delete|replace) !i', $query)) {
+	if (preg_match("!^(?:insert|update|delete|replace) !i", $query)) {
 		self::$conn->query($query);
 		return self::$conn->insert_id ?: self::$conn->affected_rows;
 	}
@@ -342,7 +342,7 @@ public static function object($query, $params=null) {
 	return new DBo_($result, $meta->db, $meta->orgtable);
 }
 
-public static function keyValue($query, $params=null) {
+public static function keyValue($query, $params=null, $cache=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
@@ -350,7 +350,13 @@ public static function keyValue($query, $params=null) {
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_row()) $return[$row[0]] = $row[1];
+	// TODO cache
 	return $return;
+}
+
+public function keyValueO($column_key, $column_value, $cache=null) {
+	$this->stack[0]->sel = "a.".$column_key.", a.".$column_value;
+	return self::keyValue($this->buildQuery(), null, $cache);
 }
 
 public static function keyValues($query, $params=null) {
@@ -362,6 +368,10 @@ public static function keyValues($query, $params=null) {
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_assoc()) $return[array_shift($row)] = $row;
 	return $return;
+}
+
+public function keyValuesO($cache=null) {
+	return self::keyValues($this->buildQuery(), null, $cache);
 }
 
 /* value(query, param1, param2, ...)
@@ -385,7 +395,7 @@ public static function value($query, array $params=null) {
 	return self::$conn->query($query)->fetch_row()[0];
 }
 
-public static function values($query, $params=null) {
+public static function values($query, $params=null, $cache=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
@@ -393,35 +403,27 @@ public static function values($query, $params=null) {
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($value = $result->fetch_row()[0]) $return[] = $value;
+	// TODO cache
 	return $return;
 }
 
-/*
-TODO implement
-$payments = DBo::Categories()->cache(60);
-// [{id=>0, name=>Sports}, {id=>1, name=>Movies}, ...]
+public function valuesO($column, $cache=null) {
+	$this->stack[0]->sel = "a.".$column; // TODO distinct?
+	return self::values($this->buildQuery(), null, $cache);
+}
 
-$payments = DBo::Categories()->array(60);
-// [[id=>0, name=>Sports], [id=>1, name=>Movies], ...]
+public function cache($cache=null) {
+	// TODO implement, cache
+	$result = [];
+	foreach ($this->getIterator() as $row) $result[] = $row;
+	return $result;
+}
 
-$payments = DBo::Categories()->values("col_name", 60);
-// [Sports, Movies, ...]
-
-$payments = DBo::Categories()->keyValue("col_id", "col_name", 60);
-// [0=>Sports, 1=>Movies, ...]
-
-$id = DBo::query('INSERT INTO guestbook VALUES (...)'); // LastInsert ID
-$subject = DBo::value('SELECT subject FROM guestbook WHERE id=42'); // String
-$row = DBo::keyValue('SELECT id,title FROM guestbook'); // Array
-$row = DBo::keyValues('SELECT id,title,subject FROM guestbook'); // Array
-*/
-
-// TODO change get prefix
-public function get_values($column, $cache=null) {
-	// TODO implement select only first column
-	// TODO distinct ?
-	$this->stack[0]->sel = "a.".$column;
-	return self::values($this->buildQuery());
+public function cArray($cache=null) {
+	// TODO cache
+	$result = [];
+	foreach (self::query($this->buildQuery()) as $row) $result[] = $row;
+	return $result;
 }
 
 /* PHP 5.5
@@ -445,15 +447,15 @@ public static function valuesY($query, $params=null) {
 */
 
 public static function begin() {
-	self::$conn->query('begin');
+	self::$conn->query("begin");
 }
 
 public static function rollback() {
-	self::$conn->query('rollback');
+	self::$conn->query("rollback");
 }
 
 public static function commit() {
-	self::$conn->query('commit');
+	self::$conn->query("commit");
 }
 
 public static function queryToText($query, $params=null) {
