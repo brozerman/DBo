@@ -428,6 +428,15 @@ public function arrayO($cache=null) {
 }
 
 /* PHP 5.5
+public static function valuesY($query, $params=null) {
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
+	$result = self::$conn->query($query);
+	while ($row = $result->fetch_row()[0]) yield $row;
+}
+
 public static function keyValueY($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
@@ -437,13 +446,14 @@ public static function keyValueY($query, $params=null) {
 	while ($row = $result->fetch_row()) yield $row[0] => $row[1];
 }
 
-public static function valuesY($query, $params=null) {
+public static function keyValuesY($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
 	}
+	$return = [];
 	$result = self::$conn->query($query);
-	while ($row = $result->fetch_row()[0]) yield $row;
+	while ($row = $result->fetch_assoc()) yield array_shift($row) => $row;
 }
 */
 
