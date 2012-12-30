@@ -203,19 +203,12 @@ public function __get($name) {
 	return $this->$name;
 }
 
-public function __toString() {
-	return $this->buildQuery();
-}
-
-public function explain() {
-	return self::queryToText("explain ".$this->buildQuery());
-}
-
 public function setFrom($arr) {
-	foreach ($arr as $key=>$val) $this->$key = $val;
-	// TODO optimize
-	$pkeys = &self::$schema->pkey[$this->db][$this->table];
-	foreach ($pkeys as $pkey) if (isset($arr[$pkey])) $this->stack[0]->params[] = [$pkey=>$arr[$pkey]];
+	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
+	foreach ($arr as $key=>$val) {
+		$this->$key = $val;
+		if (isset($pkeys[$key])) $this->stack[0]->params[] = [$key=>$val];
+	}
 	return $this;
 }
 
@@ -268,6 +261,14 @@ public function count() {
 
 public function delete() {
 	return self::query($this->buildQuery("DELETE"));
+}
+
+public function __toString() {
+	return $this->buildQuery();
+}
+
+public function explain() {
+	return self::queryToText("EXPLAIN ".$this->buildQuery());
 }
 
 public function print_r() {
