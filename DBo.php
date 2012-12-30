@@ -107,8 +107,6 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 		if ($got_pkey and !$skip_join) $got_pkey = [$key+1, count($where)];
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
-			$where_count = count($where);
-
 			$next = &$this->stack[$key+1];
 			$next_col = &self::$schema->col[$next->db][$next->table];
 			$next_pkeys = &self::$schema->pkey[$next->db][$next->table];
@@ -122,13 +120,13 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 					$next_params[$next_pkeys[0]] = " IS NULL";
 				} else if (is_array($param) and is_numeric(key($param))) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
-						$p = [];
-						foreach ($next_pkeys as $pkey_k=>$pkey_v) {
-							if (!isset($param[0][$pkey_k])) break;
-							foreach ($param as $k=>$v) $p[$pkey_v][] = $v[$pkey_k];
+						$param_t = [];
+						foreach ($next_pkeys as $pk=>$pv) {
+							if (!isset($param[0][$pk])) break;
+							foreach ($param as $k=>$v) $param_t[$pv][] = $v[$pk];
 						}
-						self::_escape($p);
-						foreach ($p as $k=>$v) $next_params[$k] = " IN ".$v;
+						self::_escape($param_t);
+						foreach ($param_t as $k=>$v) $next_params[$k] = " IN ".$v;
 					} else { // [1,2,3] => id in (1,2,3)
 						self::_escape($param);
 						$next_params[$next_pkeys[0]] = " IN (".implode(",", $param).")";
@@ -140,6 +138,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 			}
 			$need_join = false;
 			$match = false;
+			$where_count = count($where);
 			foreach ($pkeys as $pkey) {
 				if (isset($next_col[$elem->table."_".$pkey])) {
 					$match = true;
@@ -205,14 +204,11 @@ public function __get($name) {
 }
 
 public function __toString() {
-	// TODO2 optimize
-	// @see http://stackoverflow.com/questions/2429642/why-its-impossible-to-throw-exception-from-tostring
-	try {
-		return self::queryToText("explain ".$this->buildQuery());
-	}
-	catch (Exception $e) {
-		trigger_error($e, E_USER_ERROR);
-	}
+	return $this->buildQuery();
+}
+
+public function explain() {
+	return self::queryToText("explain ".$this->buildQuery());
 }
 
 public function setFrom($arr) {
