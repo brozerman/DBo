@@ -359,7 +359,7 @@ public function keyValueO($column_key, $column_value, $cache=null) {
 	return self::keyValue($this->buildQuery(), null, $cache);
 }
 
-public static function keyValues($query, $params=null) {
+public static function keyValues($query, $params=null, $cache=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
@@ -367,6 +367,7 @@ public static function keyValues($query, $params=null) {
 	$return = [];
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_assoc()) $return[array_shift($row)] = $row;
+	// TODO cache
 	return $return;
 }
 
@@ -419,8 +420,8 @@ public function cache($cache=null) {
 	return $result;
 }
 
-public function cArray($cache=null) {
-	// TODO cache
+public function arrayO($cache=null) {
+	// TODO cache, arrayY
 	$result = [];
 	foreach (self::query($this->buildQuery()) as $row) $result[] = $row;
 	return $result;
