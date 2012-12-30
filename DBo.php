@@ -56,6 +56,7 @@ protected function __construct($table, $params) {
 		self::$schema = new stdclass();
 		self::$schema->col = &$col;
 		self::$schema->pkey = &$pkey;
+		self::$schema->pkey_k = &$pkey_k;
 		self::$schema->idx = &$idx;
 		self::$schema->autoinc = &$autoinc;
 	}
@@ -71,23 +72,26 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 		$alias = chr($key+97); // a,b,c...
 		$from[] = $elem->db.".".$elem->table." ".$alias;
 		$pkeys = &self::$schema->pkey[$elem->db][$elem->table];
+		$pkeys_k = &self::$schema->pkey_k[$elem->db][$elem->table];
 
 		$skip_join = true;
-		foreach ($elem->params as $i=>$param) { // TODO2 reference?
-			if ($param==="0" or $param===0) {
-				$where[] = $alias.".".$pkeys[0]."='0'";
-			} else if (is_numeric($param)) { // pkey given as const
-				$where[] = $alias.".".$pkeys[0]."=".$param;
+		foreach ($elem->params as $i=>$param) {
+			if (is_numeric($param)) { // pkey given as const
+				$where[] = $alias.".".$pkeys[0]."='".$param."'";
 			} else if ($param===null) {
 				$where[] = $alias.".".$pkeys[0]." IS NULL";
-			} else if (is_array($param) and is_numeric(key($param))) {
+			} else if (is_array($param) and is_numeric(key($param))) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
+				// incomplete keys, e.g. 2 columns in array but primary key with 3
+				$cols = is_array($param[0]) ? implode(",".$alias.".", array_slice($pkeys, 0, count($param[0]))) : $pkeys[0];
 				self::_escape($param);
-				$where[] = "(".$alias.".".implode(",".$alias.".", $pkeys).") IN (".implode(",", $param).")";
-			} else if (is_array($param)) {
+				$where[] = "(".$alias.".".$cols.") IN (".implode(",", $param).")";
+			} else if (is_array($param)) { // [id=>[1,2,3]] or [id=>42]
 				self::_escape($param);
-				foreach ($param as $k=>$v) $where[] = $alias.".".$k.($v[0]=="(" ? " IN " : "=").$v;
-				if (array_diff_key($param, array_flip($pkeys))) $skip_join = false;
-			} else {
+				foreach ($param as $k=>$v) {
+					if (!isset($pkeys_k[$k])) $skip_join = false;
+					$where[] = $alias.".".$k.($v[0]=="(" ? " IN " : "=").$v;
+				}
+			} else { // "id=? and id2=?",42,43
 				if (count($elem->params)>$i+1) {
 					$params = array_slice($elem->params, $i+1);
 					self::_escape($params);
@@ -109,31 +113,57 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 			$next_col = &self::$schema->col[$next->db][$next->table];
 			$next_pkeys = &self::$schema->pkey[$next->db][$next->table];
 
-			$join = false;
+			$next_params = [];
+			// prepare params of next table in join
+			foreach ($next->params as $param) {
+				if (is_numeric($param)) {
+					$next_params[$next_pkeys[0]] = "='".$param."'";
+				} else if ($param===null) {
+					$next_params[$next_pkeys[0]] = " IS NULL";
+				} else if (is_array($param) and is_numeric(key($param))) {
+					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
+						$p = [];
+						foreach ($next_pkeys as $pkey_k=>$pkey_v) {
+							if (!isset($param[0][$pkey_k])) break;
+							foreach ($param as $k=>$v) $p[$pkey_v][] = $v[$pkey_k];
+						}
+						self::_escape($p);
+						foreach ($p as $k=>$v) $next_params[$k] = " IN ".$v;
+					} else { // [1,2,3] => id in (1,2,3)
+						self::_escape($param);
+						$next_params[$next_pkeys[0]] = " IN (".implode(",", $param).")";
+					}
+				} else if (is_array($param)) { // [id=>[1,2,3]] or [id=>42]
+					self::_escape($param);
+					foreach ($param as $k=>$v) $next_params[$k] = ($v[0]=="(" ? " IN " : "=").$v;
+				}
+			}
+			$need_join = false;
 			$match = false;
 			foreach ($pkeys as $pkey) {
 				if (isset($next_col[$elem->table."_".$pkey])) {
 					$match = true;
-					// join can be skipped, e.g. a.id=42 and a.id=b.some_col
-					if (isset($next->params[$elem->table."_".$pkey])) { // TODO implement
-						$where[] = $alias.".".$pkey.$next->params[$elem->table."_".$pkey];
+					// join can be skipped, a.id=b.tablea_id and b.tablea_id=42 => a.id=42
+					if (isset($next_params[$elem->table."_".$pkey])) {
+						$where[] = $alias.".".$pkey.$next_params[$elem->table."_".$pkey];
 					} else {
-						$join = true;
+						$need_join = true;
+						// if ($op===null) $op = "SELECT DISTINCT"; // TODO check distinct
 						$where[] = $alias.".".$pkey."=".chr($key+98).".".$elem->table."_".$pkey;
 			}	}	}
 			if (!$match) {
 				$col = &self::$schema->col[$elem->db][$elem->table];
 				foreach ($next_pkeys as $pkey) {
 					if (isset($col[$next->table."_".$pkey])) {
-						// join can be skipped, e.g. a.id=42 and a.id=b.some_col
-						if (isset($next->params[$pkey])) { // TODO implement
-							$where[] = $alias.".".$next->table."_".$pkey.$next->params[$pkey];
+						// join can be skipped, a.tableb_id=b.id and b.id=42 => a.tableb_id=42
+						if (isset($next_params[$pkey])) {
+							$where[] = $alias.".".$next->table."_".$pkey.$next_params[$pkey];
 						} else {
-							$join = true;
+							$need_join = true;
 							$where[] = $alias.".".$next->table."_".$pkey."=".chr($key+98).".".$pkey;
 			}	}	}	}
-			if ($where_count == count($where)) throw new Exception("Error: producing cross product");
-			if (!$join and !$got_pkey and count($where)-$where_count==count($pkeys)) $got_pkey = [$key+1, count($where)];
+			if ($where_count == count($where)) throw new Exception("Error: producing cross product: ".$elem->table);
+			if (!$need_join and !$got_pkey) $got_pkey = [$key+1, count($where)];
 		}
 	}
 	if ($got_pkey) {
@@ -373,7 +403,6 @@ public static function values($query, $params=null) {
 	return $return;
 }
 
-
 /*
 TODO implement
 $payments = DBo::Categories()->cache(60);
@@ -397,6 +426,8 @@ $row = DBo::keyValues('SELECT id,title,subject FROM guestbook'); // Array
 // TODO change get prefix
 public function get_values($column, $cache=null) {
 	// TODO implement select only first column
+	// TODO distinct ?
+	$this->stack[0]->sel = "a.".$column;
 	return self::values($this->buildQuery());
 }
 
@@ -448,15 +479,20 @@ public static function queryToText($query, $params=null) {
 public static function exportSchema($exclude_db=["information_schema", "performance_schema", "mysql"]) {
 	$col = [];
 	$pkey = [];
+	$pkey_k = [];
 	$autoinc = [];
 	$idx = [];
 	foreach (self::query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
 		$col[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
-		if ($row["COLUMN_KEY"] == "PRI") $pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+		if ($row["COLUMN_KEY"] == "PRI") {
+			$pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+			$pkey_k[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+		}
 		if ($row["COLUMN_KEY"] != "") $idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
 		if ($row["EXTRA"] == "auto_increment") $autoinc[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ] = $row["COLUMN_NAME"];
 	}
-	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$idx=".var_export($idx, true)."; \$autoinc=".var_export($autoinc, true).";";
+	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$pkey_k=".var_export($pkey_k, true).";".
+		"\$idx=".var_export($idx, true)."; \$autoinc=".var_export($autoinc, true).";";
 	$schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
 	file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
 	$col = null;
