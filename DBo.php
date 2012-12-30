@@ -1,5 +1,4 @@
 <?php
-
 // throw mysqli_sql_exception on connection or query error
 mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
 
@@ -81,15 +80,15 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 			} else if ($param===null) {
 				$where[] = $alias.".".$pkeys[0]." IS NULL";
 			} else if (is_array($param) and is_numeric(key($param))) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
-				// incomplete keys, e.g. 2 columns in array but primary key with 3
+				// incomplete keys, e.g. 2 columns in array but primary key with 3 columns
 				$cols = is_array($param[0]) ? implode(",".$alias.".", array_slice($pkeys, 0, count($param[0]))) : $pkeys[0];
 				self::_escape($param);
 				$where[] = "(".$alias.".".$cols.") IN (".implode(",", $param).")";
 			} else if (is_array($param)) { // [id=>[1,2,3]] or [id=>42]
 				self::_escape($param);
 				foreach ($param as $k=>$v) {
-					if (!isset($pkeys_k[$k])) $skip_join = false;
 					$where[] = $alias.".".$k.($v[0]=="(" ? " IN " : "=").$v;
+					if (!isset($pkeys_k[$k])) $skip_join = false;
 				}
 			} else { // "id=? and id2=?",42,43
 				if (count($elem->params)>$i+1) {
@@ -103,8 +102,8 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 				break;
 			}
 		}
-		if ($skip_join and !$got_pkey and count($elem->params)>0) $got_pkey = [$key+1, count($where)];
-		if ($got_pkey and !$skip_join) $got_pkey = [$key+1, count($where)];
+		if ($skip_join and !$got_pkey and count($elem->params)>0) $got_pkey = [$from, $where];
+		if (!$skip_join and $got_pkey) $got_pkey = [$from, $where];
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
 			$next = &$this->stack[$key+1];
@@ -112,8 +111,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 			$next_pkeys = &self::$schema->pkey[$next->db][$next->table];
 
 			$next_params = [];
-			// prepare params of next table in join
-			foreach ($next->params as $param) {
+			foreach ($next->params as $param) { // prepare params of next table in join
 				if (is_numeric($param)) {
 					$next_params[$next_pkeys[0]] = "='".$param."'";
 				} else if ($param===null) {
@@ -142,8 +140,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 			foreach ($pkeys as $pkey) {
 				if (isset($next_col[$elem->table."_".$pkey])) {
 					$match = true;
-					// join can be skipped, a.id=b.tablea_id and b.tablea_id=42 => a.id=42
-					if (isset($next_params[$elem->table."_".$pkey])) {
+					if (isset($next_params[$elem->table."_".$pkey])) { // skip join, a.id=b.t_id and b.t_id=42 => a.id=42
 						$where[] = $alias.".".$pkey.$next_params[$elem->table."_".$pkey];
 					} else {
 						$need_join = true;
@@ -154,20 +151,19 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 				$col = &self::$schema->col[$elem->db][$elem->table];
 				foreach ($next_pkeys as $pkey) {
 					if (isset($col[$next->table."_".$pkey])) {
-						// join can be skipped, a.tableb_id=b.id and b.id=42 => a.tableb_id=42
-						if (isset($next_params[$pkey])) {
+						if (isset($next_params[$pkey])) { // skip join, a.t_id=b.id and b.id=42 => a.t_id=42
 							$where[] = $alias.".".$next->table."_".$pkey.$next_params[$pkey];
 						} else {
 							$need_join = true;
 							$where[] = $alias.".".$next->table."_".$pkey."=".chr($key+98).".".$pkey;
 			}	}	}	}
 			if ($where_count == count($where)) throw new Exception("Error: producing cross product: ".$elem->table);
-			if (!$need_join and !$got_pkey) $got_pkey = [$key+1, count($where)];
+			if (!$need_join and !$got_pkey) $got_pkey = [$from, $where];
 		}
 	}
-	if ($got_pkey) {
-		$from = array_slice($from, 0, $got_pkey[0]);
-		$where = array_slice($where, 0, $got_pkey[1]);
+	if ($got_pkey) { // break join chain when primary key is complete
+		$from = $got_pkey[0];
+		$where = $got_pkey[1];
 	}
 	if ($op=="UPDATE") {
 		$query = "UPDATE ".implode(",", $from)." SET ".$set;
@@ -216,7 +212,7 @@ public function save($key=null, $value=false) {
 	if ($key!=null) {
 		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
-	$data = DBo_Helper::getPublicVars($this);
+	$data = DBo__::getPublicVars($this);
 	foreach ($data as $key=>$value) {
 		if ($value!==false) {
 			if (strpos($key, "arr_")===0) {
@@ -239,7 +235,7 @@ public function save($key=null, $value=false) {
 	}
 	$pkeys = self::$schema->pkey[$this->db][$this->table];
 
-	// TODO fix
+	// TODO fix, check auto_increment, force insert
 	if (true or !array_diff_key(array_flip($pkeys), $data)) { // pkeys given
 		return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
 	} else {
@@ -509,9 +505,7 @@ class DBo_ extends IteratorIterator {
 		return DBo::init($this->table)->db($this->db)->setFrom(parent::current());
 	}
 }
-
-// TODO2 optimize => RFC?
-class DBo_Helper {
+class DBo__ {
 	public static function getPublicVars($obj) {
 		return get_object_vars($obj);
 	}
