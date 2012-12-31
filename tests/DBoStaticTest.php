@@ -10,6 +10,9 @@ class mysqli_log extends mysqli {
 	}
 }
 
+class DBo_SomeTable {
+}
+
 /**
  * DBo test static methods
  */
@@ -171,5 +174,10 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 			"idx"=>["test"=>["t2"=>["a"]]],
 		];
 		$this->assertAttributeEquals($schema, "schema", "DBo");
+	}
+	
+	public function testCustomClass() {
+		$dbo = DBo::SomeTable();
+		$this->assertInstanceOf("DBo_SomeTable", $dbo);
 	}
 }
