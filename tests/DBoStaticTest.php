@@ -161,6 +161,11 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$dbo = DBo::hello(42);
 		$this->assertInstanceOf("DBo", $dbo);
 		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
+
+		$stack["params"] = [[42,13]];
+		$dbo = DBo::hello([42,13]);
+		$this->assertInstanceOf("DBo", $dbo);
+		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
 	}
 
 	public function testExportSchema() {
