@@ -30,7 +30,7 @@ public static function __callStatic($method, $args) {
 // forward $dbo->SomeTable($args) to DBo::init("SomeTable", $args)
 public function __call($method, $args) {
 	$obj = call_user_func("static::init", $method, $args);
-	$obj->stack = array_merge($obj->stack, $this->stack);
+	foreach ($this->stack as $elem) $obj->stack[] = $elem;
 	return $obj;
 }
 
