@@ -9,7 +9,8 @@ before_script:
 
 script:
   - phpunit --coverage-text=test.txt --coverage-html=report/ tests/
-  - links -dump report/DBo.php.html
+#  - links -dump report/DBo.php.html
+  - mail --help
   - phpcs --standard=zend --report-width=100 *.php | grep -Ev "\| (Spaces|Line exceeds|Opening brace|Opening parenthesis|Closing parenthesis)|valid camel"
 
 notifications:
