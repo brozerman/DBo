@@ -24,6 +24,9 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
 		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY)");
 		$db->close();
+
+		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
+		DBo::exportSchema();
 	}
 
 	protected function setUp() {
