@@ -149,17 +149,18 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(["'hello\\rworld\\n!'"], self::_testEscape(["hello\rworld\n!"]));
 		$this->assertEquals(["(1,2,3)"], self::_testEscape([[1,2,3]]));
 		$this->assertEquals(["(1,2,(3,4))"], self::_testEscape([[1,2,[3,4]]]));
-		$this->assertEquals(["((1,2),(3,4))"], self::_testEscape([[1,2],[3,4]]));
+		$this->assertEquals(["(1,2)","(3,4)"], self::_testEscape([[1,2],[3,4]]));
 	}
 
 	public function testInit() {
+		$stack = ["sel"=>"a.*", "table"=>"hello", "params"=>[42], "db"=>"test"];
 		$dbo = DBo::init("hello", 42);
 		$this->assertInstanceOf("DBo", $dbo);
-		$this->assertAttributeEquals([["table"=>"hello", "params"=>42]], "stack", $dbo);
+		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
 
 		$dbo = DBo::hello(42);
 		$this->assertInstanceOf("DBo", $dbo);
-		$this->assertAttributeEquals([["table"=>"hello", "params"=>42]], "stack", $dbo);
+		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
 	}
 
 	public function testExportSchema() {

@@ -94,7 +94,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 				if (count($elem->params)>$i+1) {
 					$params = array_slice($elem->params, $i+1);
 					self::_escape($params);
-					$where[] = vsprintf(str_replace(["@","?"], [$alias.".","%s"], $param), $params);
+					$where[] = vsprintf(str_replace(["@", "?"], [$alias.".", "%s"], $param), $params);
 				} else {
 					$where[] = str_replace("@", $alias.".", $param);
 				}
