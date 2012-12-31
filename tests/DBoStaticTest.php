@@ -149,8 +149,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(["'hello\\rworld\\n!'"], self::_testEscape(["hello\rworld\n!"]));
 		$this->assertEquals(["(1,2,3)"], self::_testEscape([[1,2,3]]));
 		$this->assertEquals(["(1,2,(3,4))"], self::_testEscape([[1,2,[3,4]]]));
-		$this->assertEquals(["a_arr"=>[1,2,3], "a"=>"1,2,3"], self::_testEscape(["a_arr"=>[1,2,3]]));
-		$this->assertEquals(["a_json"=>[1,2,"b"], "a"=>"[1,2,\"b\"]"], self::_testEscape(["a_json"=>[1,2,"b"]]));
+		$this->assertEquals(["((1,2),(3,4))"], self::_testEscape([[1,2],[3,4]]));
 	}
 
 	public function testInit() {
@@ -166,9 +165,11 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testExportSchema() {
 		DBo::exportSchema();
 		$this->assertEquals(file_get_contents(__DIR__."/../schema.php"), "<?php\n".
-			"\$cols=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1]]];\n".
-			"\$pkeys=['test'=>['t2'=>[0=>'a']]];\n".
-			"\$idx=['test'=>['t2'=>[0=>'a']]];");
+			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1]]];\n".
+			"\$pkey=['test'=>['t2'=>[0=>'a']]];\n".
+			"\$pkey_k=['test'=>['t2'=>['a'=>1]]];\n".
+			"\$idx=['test'=>['t2'=>[0=>'a']]];\n".
+			"\$autoinc=['test'=>['t2'=>'a']];");
 	}
 
 	public function testLoadSchema() {
