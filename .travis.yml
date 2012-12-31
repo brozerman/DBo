@@ -5,13 +5,13 @@ php:
 before_script:
   - pear channel-discover pear.phpunit.de
   - pear install pear/PHP_CodeSniffer >/dev/null
+  - sudo apt-get install -qq links
   - phpenv rehash
 
 script:
-  - phpunit --coverage-text=test.txt --coverage-html=report/ tests/
-#  - links -dump report/DBo.php.html
-  - mail --help
+  - phpunit --coverage-text --coverage-html=report/ tests/
   - phpcs --standard=zend --report-width=100 *.php | grep -Ev "\| (Spaces|Line exceeds|Opening brace|Opening parenthesis|Closing parenthesis)|valid camel"
+  - links -dump report/DBo.php.html
 
 notifications:
   email:
