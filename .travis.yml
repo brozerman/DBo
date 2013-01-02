@@ -11,7 +11,7 @@ before_script:
 script:
   - phpunit --coverage-text --coverage-html=report/ tests/
   - phpcs --standard=zend --report-width=100 *.php | grep -Ev "\| (Spaces|Line exceeds|Opening brace|Opening parenthesis|Closing parenthesis)|valid camel"
-  - links -width 180 -dump report/DBo.php.html | sed -e "s/<\?php.*//g"
+  - links -width 180 -dump report/DBo.php.html | sed -e "s/<\?php.+Legend//"
 
 notifications:
   email:
