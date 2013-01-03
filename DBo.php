@@ -255,6 +255,26 @@ public function count() {
 	return self::value($this->buildQuery("SELECT", "count(*)"));
 }
 
+// TODO document
+public function sum($column) {
+	return self::value($this->buildQuery("SELECT", "sum(a.".$column.")"));
+}
+
+/* TODO check
+STD()	Return the population standard deviation
+STDDEV_POP()	Return the population standard deviation
+STDDEV_SAMP()	Return the sample standard deviation
+STDDEV()	Return the population standard deviation
+VAR_POP()	Return the population standard variance
+VAR_SAMP()	Return the sample variance
+VARIANCE()	Return the population standard variance
+*/
+
+// TODO document
+public function avg($column) {
+	return self::value($this->buildQuery("SELECT", "avg(a.".$column.")"));
+}
+
 public function delete() {
 	return self::query($this->buildQuery("DELETE"));
 }
