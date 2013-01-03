@@ -213,8 +213,8 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public function testExplain() {
 		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a='1' | 1 rows\n\n".
-			"id | select_type | table |  type | possible_keys |     key | key_len |   ref | rows |       Extra | \n".
-			" 1 |      SIMPLE |     a | const |       PRIMARY | PRIMARY |       4 | const |    1 | Using index | \n";
+			"id | select_type | table |  type | possible_keys |     key | key_len |   ref | rows | Extra | \n".
+			" 1 |      SIMPLE |     a | const |       PRIMARY | PRIMARY |       4 | const |    1 |       | \n";
 		$this->assertEquals(DBo::t2(1)->explain(), $explain);
 	}
 
