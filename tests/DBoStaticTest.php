@@ -3,7 +3,7 @@ require_once "DBo.php";
 
 class mysqli_log extends mysqli {
 	public static $queries = [];
-	
+
 	public function query($query) {
 		self::$queries[] = $query;
 		return parent::query($query);
@@ -23,6 +23,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20))");
 		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
 		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY)");
+		$db->query("INSERT INTO test.t2 (42)");
 		$db->close();
 
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
@@ -204,11 +205,10 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testExplain() {
-		DBo::query("INSERT INTO test.t2 VALUES (41)"); // make where possible
-		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a='41' | 1 rows\n\n".
+		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a='42' | 1 rows\n\n".
 			"id | select_type | table |  type | possible_keys |     key | key_len |   ref | rows |       Extra | \n".
 			" 1 |      SIMPLE |     a | const |       PRIMARY | PRIMARY |       4 | const |    1 | Using index | \n";
-		$this->assertEquals(DBo::t2(41)->explain(), $explain);
+		$this->assertEquals(DBo::t2(42)->explain(), $explain);
 	}
 
 	public function testSelect() {
@@ -220,31 +220,38 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testExists() {
-		DBo::query("INSERT INTO test.t2 VALUES (42)");
 		$this->assertTrue(DBo::t2(42)->exists());
 		$this->assertFalse(DBo::t2(43)->exists());
 	}
 
 	public function testDelete() {
-		DBo::query("INSERT INTO test.t2 VALUES (44)");
-		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 1);
-		$this->assertEquals(DBo::t2(44)->delete(), 1);
-		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a='44'");
-		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 0);
+		DBo::query("INSERT INTO test.t2 VALUES (43)");
+		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=43"), 1);
+		$this->assertEquals(DBo::t2(43)->delete(), 1);
+		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a='43'");
+		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=43"), 0);
 	}
 
 	public function testCount() {
-		DBo::query("INSERT INTO test.t2 VALUES (45),(46),(47)");
-		$this->assertEquals(DBo::t2([45,46,47])->count(), 3);
+		DBo::query("INSERT INTO test.t2 VALUES (44),(44),(44)");
+		$this->assertEquals(DBo::t2([44,45,46])->count(), 3);
 	}
 
 	public function testIterator() {
-		DBo::query("INSERT INTO test.t2 VALUES (48),(49),(50)");
-		$a = ["-1","48","49","50"];
+		$a = ["-1","42"];
 		foreach (DBo::t2($a) as $o) {
 			$this->assertInstanceOf("DBo", $o);
 			$this->assertEquals($o->a, next($a));
 		}
-		$this->assertEquals(end(mysqli_log::$queries), "SELECT a.* FROM test.t2 a WHERE (a.a) IN (-1,48,49,50)");
+		$this->assertEquals(end(mysqli_log::$queries), "SELECT a.* FROM test.t2 a WHERE (a.a) IN (-1,42)");
+	}
+
+	public function testGet() {
+		$this->assertEquals(DBo::t2(42)->a, 42);
+	}
+
+	public function testPrint_r() {
+		$this->expectOutputString("Array\n(\n    [a] => 42\n)\n");
+		DBo::t2(42)->print_r();
 	}
 }
