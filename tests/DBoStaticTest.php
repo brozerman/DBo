@@ -11,6 +11,9 @@ class mysqli_log extends mysqli {
 }
 
 class DBo_SomeTable extends DBo {
+	function col() {
+		return 42;
+	}
 }
 
 /**
@@ -197,6 +200,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testCustomClass() {
 		$dbo = DBo::SomeTable();
 		$this->assertInstanceOf("DBo_SomeTable", $dbo);
+		$this->assertEquals($dbo->col, 42); // calls DBo_SomeTable::col()
 	}
 
 	public function testBuildQuery() {
