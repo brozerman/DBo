@@ -228,7 +228,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		DBo::query("INSERT INTO test.t2 VALUES (44)");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 1);
 		$this->assertEquals(DBo::t2(44)->delete(), 1);
-		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a=44");
+		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a='44'");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 0);
 	}
 }
