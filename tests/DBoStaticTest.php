@@ -215,7 +215,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2()->select(["b","c"])->buildQuery(), "SELECT a.b,a.c FROM test.t2 a");
 
 		// t2:t3 = 1:n, t2.a = t3.t2_a
-		$this->assertEquals(DBo::t2()->t3()->buildQuery(), "");
+		$this->assertEquals(DBo::t2()->t3()->buildQuery(), "SELECT a.* FROM test.t3 a,test.t2 b WHERE a.t2_a=b.a");
 		$this->assertEquals(DBo::t2(1)->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a='1'");
 		$this->assertEquals(DBo::t2()->t3(1)->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.a='1'");
 		$this->assertEquals(DBo::t2(1)->t3(1)->buildQuery(), "");
