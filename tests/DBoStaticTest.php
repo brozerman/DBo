@@ -23,7 +23,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20))");
 		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
 		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY)");
-		$db->query("INSERT INTO test.t2 (42)");
+		$db->query("INSERT INTO test.t2 VALUES (42)");
 		$db->close();
 
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
