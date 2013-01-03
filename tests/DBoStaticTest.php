@@ -180,7 +180,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testExportSchema() {
 		DBo::exportSchema();
 		$this->assertEquals(file_get_contents(__DIR__."/../schema.php"), "<?php\n".
-			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1],'t2'=>['a'=>1,'t2_a'=>1]]];\n".
+			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1],'t3'=>['a'=>1,'t2_a'=>1]]];\n".
 			"\$pkey=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a']]];\n".
 			"\$pkey_k=['test'=>['t2'=>['a'=>1],'t3'=>['a'=>1]]];\n".
 			"\$idx=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a']]];\n".
@@ -213,8 +213,8 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 3");
 		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 2,3");
 
-		$this->assertEquals(DBo::t2(1)->t3()->buildQuery(), "");
-		$this->assertEquals(DBo::t2()->t3(1)->buildQuery(), "");
+		$this->assertEquals(DBo::t2(1)->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a='1'");
+		$this->assertEquals(DBo::t2()->t3(1)->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.a='1'");
 		$this->assertEquals(DBo::t3(1)->t2()->buildQuery(), "");
 		$this->assertEquals(DBo::t3()->t2(1)->buildQuery(), "");
 		$this->assertEquals(DBo::t3(1)->t2(1)->buildQuery(), "");
