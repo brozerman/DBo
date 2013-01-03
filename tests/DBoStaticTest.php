@@ -209,6 +209,10 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals((string)DBo::t2(42), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
 		$this->assertEquals((string)DBo::t2([1,2,3]), "SELECT a.* FROM test.t2 a WHERE (a.a) IN (1,2,3)");
 		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
+		$this->assertEquals(DBo::t2(null)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a IS NULL");
+		$this->assertEquals(DBo::t2(["a"=>42])->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
+		$this->assertEquals(DBo::t2("@a=42")->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
+		$this->assertEquals(DBo::t2("@a=?",42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
 
 		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 3");
 		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 2,3");
