@@ -10,7 +10,7 @@ class mysqli_log extends mysqli {
 	}
 }
 
-class DBo_SomeTable {
+class DBo_SomeTable extends DBo {
 }
 
 /**
@@ -200,11 +200,21 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2(42)->limit(3,2), "SELECT a.* FROM test.t2 a WHERE a.a=42 LIMIT 2,3");
 	}
 
+	public function testExplain() {
+		$this->assertEquals(DBo::t2(42)->explain(), "");
+	}
+
 	public function testSelect() {
 		$this->assertEquals(DBo::t2(["b","c"]), "SELECT a.b,a.c FROM test.t2 a");
 	}
 
 	public function testDb() {
 		$this->assertEquals(DBo::sometable()->db("somedb"), "SELECT a.* FROM somedb.sometable a");
+	}
+	
+	public function testExists() {
+		DBo::query("INSERT INTO test.t2 VALUES (42)");
+		$this->assertTrue(DBo::t2(42)->exists());
+		$this->assertFalse(DBo::t2(43)->exists());
 	}
 }
