@@ -277,7 +277,7 @@ public function db($database) {
 }
 
 public function limit($count, $offset=0) {
-	$this->stack[0]->limit = $offset." ".$count;
+	$this->stack[0]->limit = (int)$offset.",".(int)$count;
 	return $this;
 }
 
