@@ -217,10 +217,17 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testDb() {
 		$this->assertEquals(DBo::sometable()->db("somedb"), "SELECT a.* FROM somedb.sometable a");
 	}
-	
+
 	public function testExists() {
 		DBo::query("INSERT INTO test.t2 VALUES (42)");
 		$this->assertTrue(DBo::t2(42)->exists());
 		$this->assertFalse(DBo::t2(43)->exists());
+	}
+
+	public function testDelete() {
+		DBo::query("INSERT INTO test.t2 VALUES (44)");
+		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 1);
+		$this->assertTrue(DBo::t2(44)->delete());
+		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 0);
 	}
 }
