@@ -197,6 +197,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public function testBuildQuery() {
 		$this->assertEquals((string)DBo::t2(42), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
+		$this->assertEquals((string)DBo::t2([1,2,3]), "SELECT a.* FROM test.t2 a WHERE (a.a) IN (1,2,3)");
 		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
 		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 3");
 		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 2,3");
@@ -230,5 +231,20 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2(44)->delete(), 1);
 		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a='44'");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 0);
+	}
+
+	public function testCount() {
+		DBo::query("INSERT INTO test.t2 VALUES (45),(46),(47)");
+		$this->assertEquals(DBo::t2([45,46,47])->count(), 3);
+	}
+
+	public function testIterator() {
+		DBo::query("INSERT INTO test.t2 VALUES (48),(49),(50)");
+		$a = ["-1","48","49","50"];
+		foreach (DBo::t2($a) as $o) {
+			$this->assertInstanceOf("DBo", $o);
+			$this->assertEquals($o->a, next($a));
+		}
+		$this->assertEquals(end(mysqli_log::$queries), "SELECT a.* FROM test.t2 a WHERE (a.a) IN (-1,48,49,50)");
 	}
 }
