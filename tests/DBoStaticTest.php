@@ -205,8 +205,8 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testExplain() {
 		DBo::query("INSERT INTO test.t2 VALUES (41)"); // make where possible
 		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a='41' | 1 rows\n\n".
-			"id | select_type | table |  type | possible_keys |     key | key_len |   ref | rows |       Extra |\n".
-			" 1 |      SIMPLE |     a | const |       PRIMARY | PRIMARY |       4 | const |    1 | Using index |\n";
+			"id | select_type | table |  type | possible_keys |     key | key_len |   ref | rows |       Extra | \n".
+			" 1 |      SIMPLE |     a | const |       PRIMARY | PRIMARY |       4 | const |    1 | Using index | \n";
 		$this->assertEquals(DBo::t2(41)->explain(), $explain);
 	}
 
