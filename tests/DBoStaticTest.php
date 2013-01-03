@@ -196,13 +196,17 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testBuildQuery() {
-		$this->assertEquals((string)DBo::t2(42), "SELECT a.* FROM test.t2 a WHERE a.a=42");
-		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
-		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42 LIMIT 2,3");
+		$this->assertEquals((string)DBo::t2(42), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
+		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
+		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 3");
+		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 2,3");
 	}
 
 	public function testExplain() {
-		$this->assertEquals(DBo::t2(42)->explain(), "");
+		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a='42' | 1 rows\n\n".
+			"id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra |\n".
+			" 1 | SIMPLE | | | | | | | | Impossible WHERE noticed after reading const tables |\n\n";
+		$this->assertEquals(DBo::t2(42)->explain(), $explain);
 	}
 
 	public function testSelect() {
