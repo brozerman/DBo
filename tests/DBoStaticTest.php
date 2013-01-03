@@ -180,20 +180,20 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testExportSchema() {
 		DBo::exportSchema();
 		$this->assertEquals(file_get_contents(__DIR__."/../schema.php"), "<?php\n".
-			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1]]];\n".
-			"\$pkey=['test'=>['t2'=>[0=>'a']]];\n".
-			"\$pkey_k=['test'=>['t2'=>['a'=>1]]];\n".
-			"\$idx=['test'=>['t2'=>[0=>'a']]];\n".
+			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1],'t2'=>['a'=>1,'t2_a'=>1]]];\n".
+			"\$pkey=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a']]];\n".
+			"\$pkey_k=['test'=>['t2'=>['a'=>1],'t3'=>['a'=>1]]];\n".
+			"\$idx=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a']]];\n".
 			"\$autoinc=['test'=>['t2'=>'a']];");
 	}
 
 	public function testLoadSchema() {
 		DBo::hello();
 		$schema = (object)[
-			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1]]],
-			"pkey"=>["test"=>["t2"=>["a"]]],
-			"pkey_k"=>["test"=>["t2"=>["a"=>1]]],
-			"idx"=>["test"=>["t2"=>["a"]]],
+			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1],"t3"=>["a"=>1,"t2_a"=>1]]],
+			"pkey"=>["test"=>["t2"=>["a"],"t3"=>["a"]]],
+			"pkey_k"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1]]],
+			"idx"=>["test"=>["t2"=>["a"],"t3"=>["a"]]],
 			"autoinc"=>["test"=>["t2"=>"a"]]
 		];
 		$this->assertAttributeEquals($schema, "schema", "DBo");
@@ -211,6 +211,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
 		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 3");
 		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 2,3");
+		$this->assertEquals(DBo::t2(1)->t1()->buildQuery(), "SELECT a.* FROM test.t1 a, test.t2 b WHERE a.a='42'");
 	}
 
 	public function testExplain() {
@@ -266,7 +267,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testPrint_r() {
-		$this->expectOutputString("Array\n(\n    [a] => 1\n    [b] => \n)\n");
+		$this->expectOutputString("Array\n(\n    [a] => 1\n    [b] => a\n)\n");
 		DBo::t2(1)->print_r();
 	}
 }
