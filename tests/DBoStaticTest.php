@@ -11,7 +11,7 @@ class mysqli_log extends mysqli {
 }
 
 class DBo_SomeTable extends DBo {
-	function col() {
+	function get_col() {
 		return 42;
 	}
 }
@@ -25,8 +25,8 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db = new mysqli("127.0.0.1", "root", "", "test");
 		$db->query("CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20))");
 		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
-		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY)");
-		$db->query("INSERT INTO test.t2 VALUES (1)");
+		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY, b VARCHAR(20))");
+		$db->query("INSERT INTO test.t2 VALUES (1,'')");
 		$db->close();
 
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
@@ -76,21 +76,21 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testInsertUpdateDeleteReplace() {
-		DBo::query("CREATE TABLE test.t3 (a INT AUTO_INCREMENT PRIMARY KEY)");
+		DBo::query("CREATE TABLE test.t4 (a INT AUTO_INCREMENT PRIMARY KEY)");
 
-		$id = DBo::query("INSERT INTO test.t3 VALUES ()");
+		$id = DBo::query("INSERT INTO test.t4 VALUES ()");
 		$this->assertEquals($id, "1");
 
-		$id = DBo::query("INSERT INTO test.t3 VALUES ()");
+		$id = DBo::query("INSERT INTO test.t4 VALUES ()");
 		$this->assertEquals($id, "2");
-		$this->assertEquals(DBo::query("UPDATE test.t3 SET a=a-1"), 2);
+		$this->assertEquals(DBo::query("UPDATE test.t4 SET a=a-1"), 2);
 
-		DBo::query("INSERT INTO test.t3 VALUES ()");
-		$this->assertEquals(DBo::query("DELETE FROM test.t3"), 3);
+		DBo::query("INSERT INTO test.t4 VALUES ()");
+		$this->assertEquals(DBo::query("DELETE FROM test.t4"), 3);
 
-		DBo::query("INSERT INTO test.t3 VALUES ()");
-		$this->assertEquals(DBo::query("REPLACE INTO test.t3 VALUES (4)"), 4);
-		DBo::query("DROP TABLE test.t3");
+		DBo::query("INSERT INTO test.t4 VALUES ()");
+		$this->assertEquals(DBo::query("REPLACE INTO test.t4 VALUES (4)"), 4);
+		DBo::query("DROP TABLE test.t4");
 	}
 
 	public function testOne() {
@@ -188,7 +188,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testLoadSchema() {
 		DBo::hello();
 		$schema = (object)[
-			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1], "t2"=>["a"=>1]]],
+			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1]]],
 			"pkey"=>["test"=>["t2"=>["a"]]],
 			"pkey_k"=>["test"=>["t2"=>["a"=>1]]],
 			"idx"=>["test"=>["t2"=>["a"]]],
@@ -245,7 +245,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testIterator() {
-		$a = ["-1","1"];
+		$a = ["-1","1"];                 
 		foreach (DBo::t2($a) as $o) {
 			$this->assertInstanceOf("DBo", $o);
 			$this->assertEquals($o->a, next($a));
@@ -257,11 +257,10 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2(1)->a, 1);
 		$this->assertEquals(DBo::t2(1)->invalid, false);
 
-		DBo::query("CREATE TABLE test.t4 (a INT PRIMARY KEY, b VARCHAR(20))");
-		DBo::query("INSERT INTO test.t4 VALUES (1,'a,b,c')");
-		DBo::query("INSERT INTO test.t4 VALUES (2,?)", ['{"a":"b"}']);
-		$this->assertEquals(DBo::t4(1)->arr_b, ["a","b","c"]);
-		$this->assertEquals(DBo::t4(2)->json_b, ["a"=>"b"]);
+		DBo::query("INSERT INTO test.t2 VALUES (1,'a,b,c')");
+		DBo::query("INSERT INTO test.t2 VALUES (2,?)", ['{"a":"b"}']);
+		$this->assertEquals(DBo::t2(1)->arr_b, ["a","b","c"]);
+		$this->assertEquals(DBo::t2(2)->json_b, ["a"=>"b"]);
 	}
 
 	public function testPrint_r() {
