@@ -211,7 +211,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testSelect() {
-		$this->assertEquals(DBo::t2(["b","c"])->buildQuery(), "SELECT a.b,a.c FROM test.t2 a");
+		$this->assertEquals(DBo::t2()->select(["b","c"])->buildQuery(), "SELECT a.b,a.c FROM test.t2 a");
 	}
 
 	public function testDb() {
@@ -228,6 +228,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		DBo::query("INSERT INTO test.t2 VALUES (44)");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 1);
 		$this->assertTrue(DBo::t2(44)->delete());
+		$this->assertEquals(end(mysqli_log::$queries), "DELETE FROM test.t2 a WHERE a.a=44");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 0);
 	}
 }
