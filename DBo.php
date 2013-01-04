@@ -260,7 +260,7 @@ public function sum($column) {
 	return self::value($this->buildQuery("SELECT", "sum(a.".$column.")"));
 }
 
-/* TODO check
+/* TODO check relevance
 STD()	Return the population standard deviation
 STDDEV_POP()	Return the population standard deviation
 STDDEV_SAMP()	Return the sample standard deviation
@@ -308,7 +308,7 @@ public function select(array $cols) {
 }
 
 public function getIterator() {
-	// TODO2 use generator from PHP 5.5 ?
+	// TODO2 generator in PHP 5.5 faster?
 	$result = self::$conn->query($this->buildQuery());
 	$meta = $result->fetch_field();
 	return new DBo_($result, $meta->db, $meta->orgtable);
@@ -444,7 +444,7 @@ public function arrayO($cache=null) {
 	return $result;
 }
 
-/* PHP 5.5
+/* PHP 5.5 generators
 public static function valuesY($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
