@@ -144,7 +144,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 						$where[] = $alias.".".$pkey.$next_params[$elem->table."_".$pkey];
 					} else {
 						$need_join = true;
-						// if ($op===null) $op = "SELECT DISTINCT"; // TODO check distinct
+						// if ($op===null) $op = "SELECT DISTINCT"; // TODO check automatic distinct for n:1
 						$where[] = $alias.".".$pkey."=".chr($key+98).".".$elem->table."_".$pkey;
 			}	}	}
 			if (!$match) {
@@ -352,6 +352,7 @@ public static function one($query, $params=null) {
 	return self::$conn->query($query)->fetch_assoc();
 }
 
+// TODO add caching for $result?
 public static function object($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
@@ -534,7 +535,7 @@ class DBo_ extends IteratorIterator {
 		return DBo::init($this->table)->db($this->db)->setFrom(parent::current());
 	}
 }
-class DBo__ {
+class DBo__ { // call get_object_vars from outside to get only public vars
 	public static function getPublicVars($obj) {
 		return get_object_vars($obj);
 	}
