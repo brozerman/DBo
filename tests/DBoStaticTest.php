@@ -262,7 +262,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public function testCount() {
 		DBo::query("INSERT INTO test.t2 (a) VALUES (45),(46),(47)");
-		$this->assertEquals(DBo::t2([45,46,47])->count(), 3);
+		$this->assertEquals(DBo::t2([-1,45,46,47])->count(), 3);
 	}
 
 	public function testIterator() {

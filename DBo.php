@@ -186,14 +186,14 @@ public function __get($name) {
 	}
 	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
 	if ($this->data===false) {
-		// TODO2 add option to disable usage_col
+		// TODO2 add option to disable usage_col, populate members directly
 		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
 			$this->select(array_keys(self::$usage_col[$this->usage_id]));
 		}
 		$this->stack[0]->limit = 1;
 		$this->data = self::$conn->query($this->buildQuery())->fetch_assoc();
 	}
-	self::$usage_col[$this->usage_id][$name] = 1;
+	self::$usage_col[$this->usage_id][$name] = 1; // track used columns, reuse in 2nd run
 	// TODO2 load/store usage_col in apc
 	$this->$name = $this->data[$name];
 	return $this->$name;
@@ -235,7 +235,7 @@ public function save($key=null, $value=false) {
 	}
 	$pkeys = self::$schema->pkey[$this->db][$this->table];
 
-	// TODO fix, check auto_increment, force insert
+	// TODO fix, check auto_increment, force insert?, replace?, insert ignore?
 	if (true or !array_diff_key(array_flip($pkeys), $data)) { // pkeys given
 		return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
 	} else {
