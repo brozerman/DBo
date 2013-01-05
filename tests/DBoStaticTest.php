@@ -265,6 +265,23 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2([-1,45,46,47])->count(), 3);
 	}
 
+	public function testSum() {
+		DBo::query("INSERT INTO test.t2 (a) VALUES (48),(49)");
+		$this->assertEquals(DBo::t2([-1,48,49])->sum("a"), 97);
+	}
+
+	public function testAvg() {
+		DBo::query("INSERT INTO test.t2 (a) VALUES (50),(54)");
+		$this->assertEquals(DBo::t2([-1,50,54])->avg("a"), 52);
+		$this->assertEquals(end(mysqli_log::$queries), "SELECT avg(a.a) FROM test.t2 a WHERE (a.a) IN (-1,50,54)");
+	}
+
+	public function testStddev() {
+		DBo::query("INSERT INTO test.t2 (a) VALUES (52),(56)");
+		$this->assertEquals(DBo::t2([-1,52,56])->stddev("a"), 42);
+		$this->assertEquals(end(mysqli_log::$queries), "SELECT stddev(a.a) FROM test.t2 a WHERE (a.a) IN (-1,52,56)");
+	}
+
 	public function testIterator() {
 		$a = ["-1","1"];                 
 		foreach (DBo::t2($a) as $o) {
