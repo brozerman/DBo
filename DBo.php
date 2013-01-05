@@ -231,16 +231,17 @@ public function save($key=null, $value=false) {
 	}
 	self::_escape($data);
 	foreach ($data as $key=>$value) {
-		if ($value===false) $data[$key] = str_replace("@", "a.", $key); else $data[$key] = "a.".$key."=".$value;
+		$data[$key] = $value===false ? str_replace("@", "a.", $key) : "a.".$key."=".$value;
 	}
-	$pkeys = self::$schema->pkey[$this->db][$this->table];
+	$pkeys_k = &self::$schema->pkey_k[$this->db][$this->table];
+	$autoinc = self::$schema->autoinc[$this->db][$this->table];
 
 	// TODO fix, check auto_increment, force insert?, replace?, insert ignore?
-	if (true or !array_diff_key(array_flip($pkeys), $data)) { // pkeys given
+	if (true or (!$autoinc or isset($data[$autoinc])) or !array_diff_key($pkeys_k, $data)) {
 		return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
 	} else {
 		$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
-		if ($field = self::$schema->autoinc[$this->db][$this->table]) $this->$field = $id;
+		if ($autoinc) $this->$autoinc = $id;
 		return $id;
 	}
 }
@@ -255,24 +256,16 @@ public function count() {
 	return self::value($this->buildQuery("SELECT", "count(*)"));
 }
 
-// TODO document
+public function avg($column) {
+	return self::value($this->buildQuery("SELECT", "avg(a.".$column.")"));
+}
+
 public function sum($column) {
 	return self::value($this->buildQuery("SELECT", "sum(a.".$column.")"));
 }
 
-/* TODO check relevance
-STD()	Return the population standard deviation
-STDDEV_POP()	Return the population standard deviation
-STDDEV_SAMP()	Return the sample standard deviation
-STDDEV()	Return the population standard deviation
-VAR_POP()	Return the population standard variance
-VAR_SAMP()	Return the sample variance
-VARIANCE()	Return the population standard variance
-*/
-
-// TODO document
-public function avg($column) {
-	return self::value($this->buildQuery("SELECT", "avg(a.".$column.")"));
+public function stddev($column) {
+	return self::value($this->buildQuery("SELECT", "stddev(a.".$column.")"));
 }
 
 public function delete() {
@@ -297,7 +290,7 @@ public function db($database) {
 }
 
 public function limit($count, $offset=0) {
-	$this->stack[0]->limit = ($offset==0) ? (int)$count : (int)$offset.",".(int)$count;
+	$this->stack[0]->limit = $offset==0 ? (int)$count : (int)$offset.",".(int)$count;
 	return $this;
 }
 
