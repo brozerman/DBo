@@ -79,7 +79,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 				$where[] = $alias.".".$pkeys[0]."='".$param."'";
 			} else if ($param===null) {
 				$where[] = $alias.".".$pkeys[0]." IS NULL";
-			} else if (is_array($param) and is_numeric(key($param))) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
+			} else if (is_array($param) and isset($param[0])) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
 				// incomplete keys, e.g. 2 columns in array but primary key with 3 columns
 				$cols = is_array($param[0]) ? implode(",".$alias.".", array_slice($pkeys, 0, count($param[0]))) : $pkeys[0];
 				self::_escape($param);
@@ -116,7 +116,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 					$next_params[$next_pkeys[0]] = "='".$param."'";
 				} else if ($param===null) {
 					$next_params[$next_pkeys[0]] = " IS NULL";
-				} else if (is_array($param) and is_numeric(key($param))) {
+				} else if (is_array($param) and isset($param[0])) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
 						$param_t = [];
 						foreach ($next_pkeys as $pk=>$pv) {
