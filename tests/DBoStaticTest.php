@@ -278,7 +278,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public function testStddev() {
 		DBo::query("INSERT INTO test.t2 (a) VALUES (52),(56)");
-		$this->assertEquals(DBo::t2([-1,52,56])->stddev("a"), 42);
+		$this->assertEquals(DBo::t2([-1,52,56])->stddev("a"), "2.0000");
 		$this->assertEquals(end(mysqli_log::$queries), "SELECT stddev(a.a) FROM test.t2 a WHERE (a.a) IN (-1,52,56)");
 	}
 
