@@ -282,7 +282,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 			$this->assertInstanceOf("DBo", $o);
 			$this->assertEquals($o->a, '1');
 		}
-		foreach (DBo::object("SELECT b FROM test.t2 WHERE a=?", 1) as $o) {
+		foreach (DBo::object("SELECT b FROM test.t2 WHERE a=?", [1]) as $o) {
 			$this->assertInstanceOf("DBo", $o);
 			$this->assertEquals($o->b, "a");
 		}
