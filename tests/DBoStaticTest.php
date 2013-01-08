@@ -197,44 +197,46 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testBuildQuery() {
-		$this->assertEquals((string)DBo::t2(42), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
+		$this->assertEquals((string)DBo::t2(42), "SELECT a.* FROM test.t2 a WHERE a.a=42");
 		$this->assertEquals((string)DBo::t2([1,2,3]), "SELECT a.* FROM test.t2 a WHERE (a.a) IN (1,2,3)");
 		$this->assertEquals((string)DBo::t2([[1,2],[3,4]]), "SELECT a.* FROM test.t2 a WHERE (a.a) IN ((1,2),(3,4))");
-		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42'");
+		$this->assertEquals(DBo::t2(42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
+		$this->assertEquals(DBo::t2(0)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='0'");
 		$this->assertEquals(DBo::t2(null)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a IS NULL");
 		$this->assertEquals(DBo::t2(["a"=>42])->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
 		$this->assertEquals(DBo::t2("a=42")->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a=42");
 		$this->assertEquals(DBo::t2("@a=42")->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
 		$this->assertEquals(DBo::t2("@a=?",42)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42");
 
-		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 3");
-		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='42' LIMIT 2,3");
+		$this->assertEquals(DBo::t2(42)->limit(3)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42 LIMIT 3");
+		$this->assertEquals(DBo::t2(42)->limit(3,2)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=42 LIMIT 2,3");
 		$this->assertEquals(DBo::t2()->select(["b","c"])->buildQuery(), "SELECT a.b,a.c FROM test.t2 a");
 
 		// t2:t3 = 1:n, t2.a = t3.t2_a (pkey = fkey)
 		// reduce joins: break join chain if primary key is complete, assume data is always consistent
 		$this->assertEquals(DBo::t2()->t3()->buildQuery(), "SELECT a.* FROM test.t3 a,test.t2 b WHERE a.t2_a=b.a");
-		$this->assertEquals(DBo::t2(1)->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a='1'");
+		$this->assertEquals(DBo::t2(1)->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a=1");
+		$this->assertEquals(DBo::t2(0)->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a='0'");
 		$this->assertEquals(DBo::t2(null)->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a IS NULL");
 		$this->assertEquals(DBo::t2([1,2])->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a IN (1,2)");
 		$this->assertEquals(DBo::t2([[1,2],[3,4]])->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a IN (1,3)");
 		$this->assertEquals(DBo::t2(["a"=>1])->t3()->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.t2_a=1");
-		$this->assertEquals(DBo::t2()->t3(1)->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.a='1'");
-		$this->assertEquals(DBo::t2(1)->t3(1)->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.a='1'");
+		$this->assertEquals(DBo::t2()->t3(1)->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.a=1");
+		$this->assertEquals(DBo::t2(1)->t3(1)->buildQuery(), "SELECT a.* FROM test.t3 a WHERE a.a=1");
 
 		// t3:t2 = n:1, t3.t2_a = t2.a (fkey = pkey)
 		$this->assertEquals(DBo::t3()->t2()->buildQuery(), "SELECT a.* FROM test.t2 a,test.t3 b WHERE a.a=b.t2_a");
-		$this->assertEquals(DBo::t3(1)->t2()->buildQuery(), "SELECT a.* FROM test.t2 a,test.t3 b WHERE a.a=b.t2_a AND b.a='1'");
-		$this->assertEquals(DBo::t3()->t2(1)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='1'");
-		$this->assertEquals(DBo::t3(1)->t2(1)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a='1'");
+		$this->assertEquals(DBo::t3(1)->t2()->buildQuery(), "SELECT a.* FROM test.t2 a,test.t3 b WHERE a.a=b.t2_a AND b.a=1");
+		$this->assertEquals(DBo::t3()->t2(1)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=1");
+		$this->assertEquals(DBo::t3(1)->t2(1)->buildQuery(), "SELECT a.* FROM test.t2 a WHERE a.a=1");
 		$this->assertEquals(DBo::t3(["t2_a"=>1])->t2()->buildQuery(), "SELECT a.* FROM test.t2 a,test.t3 b WHERE a.a=1 AND b.t2_a=1");
 		// TODO add join reduce breaker
 		
-		$this->assertEquals(DBo::t2(42)->buildQuery("UPDATE", null, "set"), "UPDATE test.t2 a SET set WHERE a.a='42'");
+		$this->assertEquals(DBo::t2(42)->buildQuery("UPDATE", null, "set"), "UPDATE test.t2 a SET set WHERE a.a=42");
 	}
 
 	public function testExplain() {
-		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a='1' | 1 rows\n\n".
+		$explain = "EXPLAIN SELECT a.* FROM test.t2 a WHERE a.a=1 | 1 rows\n\n".
 			"id | select_type | table |  type | possible_keys |     key | key_len |   ref | rows | Extra | \n".
 			" 1 |      SIMPLE |     a | const |       PRIMARY | PRIMARY |       4 | const |    1 |       | \n";
 		$this->assertEquals(DBo::t2(1)->explain(), $explain);
@@ -253,7 +255,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		DBo::query("INSERT INTO test.t2 (a) VALUES (44)");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 1);
 		$this->assertEquals(DBo::t2(44)->delete(), 1);
-		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a='44'");
+		$this->assertEquals(end(mysqli_log::$queries), "DELETE a.* FROM test.t2 a WHERE a.a=44");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 0);
 	}
 
@@ -319,7 +321,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t2(3)->json_b, ["a"=>"b"]);
 
 		// utilize used columns in second run
-		$q = [null, "SELECT a.* FROM test.t2 a WHERE a.a='1' LIMIT 1", "SELECT a.b FROM test.t2 a WHERE a.a='1' LIMIT 1"];
+		$q = [null, "SELECT a.* FROM test.t2 a WHERE a.a=1 LIMIT 1", "SELECT a.b FROM test.t2 a WHERE a.a=1 LIMIT 1"];
 		for ($i=0; $i<2; $i++) {
 			$this->assertEquals(DBo::t2(1)->b, "a");
 			$this->assertEquals(end(mysqli_log::$queries), next($q));

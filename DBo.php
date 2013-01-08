@@ -76,9 +76,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 		$skip_join = true;
 		foreach ($elem->params as $i=>$param) {
 			if (is_numeric($param)) { // pkey given as const
-				$where[] = $alias.".".$pkeys[0]."='".$param."'";
-			} else if ($param===null) {
-				$where[] = $alias.".".$pkeys[0]." IS NULL";
+				$where[] = $alias.".".$pkeys[0]."=".($param==0 ? "'0'" : $param);
 			} else if (is_array($param) and isset($param[0])) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
 				// incomplete keys, e.g. 2 columns in array but primary key with 3 columns
 				$cols = is_array($param[0]) ? implode(",".$alias.".", array_slice($pkeys, 0, count($param[0]))) : $pkeys[0];
@@ -90,6 +88,8 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 					$where[] = $alias.".".$k.($v[0]=="(" ? " IN " : "=").$v;
 					if (!isset($pkeys_k[$k])) $skip_join = false;
 				}
+			} else if ($param===null) {
+				$where[] = $alias.".".$pkeys[0]." IS NULL";
 			} else { // "id=? and id2=?",42,43
 				if (count($elem->params)>$i+1) {
 					$params = array_slice($elem->params, $i+1);
@@ -113,9 +113,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 			$next_params = [];
 			foreach ($next->params as $param) { // prepare params of next table in join
 				if (is_numeric($param)) {
-					$next_params[$next_pkeys[0]] = "='".$param."'";
-				} else if ($param===null) {
-					$next_params[$next_pkeys[0]] = " IS NULL";
+					$next_params[$next_pkeys[0]] = "=".($param==0 ? "'0'" : $param);
 				} else if (is_array($param) and isset($param[0])) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
 						$param_t = [];
@@ -132,6 +130,8 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 				} else if (is_array($param)) { // [id=>[1,2,3]] or [id=>42]
 					self::_escape($param);
 					foreach ($param as $k=>$v) $next_params[$k] = ($v[0]=="(" ? " IN " : "=").$v;
+				} else if ($param===null) {
+					$next_params[$next_pkeys[0]] = " IS NULL";
 				}
 			}
 			$need_join = false;
@@ -398,11 +398,12 @@ public static function value($query, $params=null) {
 */
 
 // value(query, [param1, param2, ...])
-public static function value($query, array $params=null) {
+public static function value($query, array $params=null, $cache=null) {
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
 	}
+	// TODO cache
 	return self::$conn->query($query)->fetch_row()[0];
 }
 
@@ -430,7 +431,7 @@ public function cache($cache=null) {
 	return $result;
 }
 
-public function arrayO($cache=null) {
+public function oarray($cache=null) {
 	// TODO cache, arrayY
 	$result = [];
 	foreach (self::query($this->buildQuery()) as $row) $result[] = $row;
