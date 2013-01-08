@@ -286,6 +286,17 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(end(mysqli_log::$queries), "SELECT stddev(a.a) FROM test.t2 a WHERE (a.a) IN (-1,52,56)");
 	}
 
+	public function testObject() {
+		foreach (DBo::object("SELECT a FROM test.t2 WHERE a=1") as $o) {
+			$this->assertInstanceOf("DBo", $o);
+			$this->assertEquals($o->a, '1');
+		}
+		foreach (DBo::object("SELECT b FROM test.t2 WHERE a=?", 1) as $o) {
+			$this->assertInstanceOf("DBo", $o);
+			$this->assertEquals($o->b, "a");
+		}
+	}
+
 	public function testIterator() {
 		$a = ["-1","1"];                 
 		foreach (DBo::t2($a) as $o) {
