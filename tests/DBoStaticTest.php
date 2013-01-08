@@ -296,7 +296,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public function testOvalues() {
 		DBo::query("INSERT INTO test.t2 (a) VALUES (59),(60)");
-		$this->assertEquals(DBo::t2([57,58])->ovalues("a"), ["59","60"]);
+		$this->assertEquals(DBo::t2([59,60])->ovalues("a"), ["59","60"]);
 	}
 
 	public function testIterator() {
