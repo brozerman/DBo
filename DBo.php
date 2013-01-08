@@ -12,14 +12,12 @@ class DBo implements IteratorAggregate {
 public static $conn = null;
 protected static $conn_db = "";
 protected static $schema = null;
-protected static $usage_col = [];
+protected static $usage_col = []; // track used columns
 
-// join stack
-protected $stack = [];
-
-protected $data = false;
+protected $stack = []; // join stack
 protected $db = "";
 protected $table = "";
+protected $data = false;
 protected $usage_id = false;
 
 // forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
@@ -438,36 +436,6 @@ public function oarray($cache=null) {
 	return $result;
 }
 
-/* PHP 5.5 generators
-public static function valuesY($query, $params=null) {
-	if ($params) {
-		self::_escape($params);
-		$query = vsprintf(str_replace("?", "%s", $query), $params);
-	}
-	$result = self::$conn->query($query);
-	while ($row = $result->fetch_row()[0]) yield $row;
-}
-
-public static function keyValueY($query, $params=null) {
-	if ($params) {
-		self::_escape($params);
-		$query = vsprintf(str_replace("?", "%s", $query), $params);
-	}
-	$result = self::$conn->query($query);
-	while ($row = $result->fetch_row()) yield $row[0] => $row[1];
-}
-
-public static function keyValuesY($query, $params=null) {
-	if ($params) {
-		self::_escape($params);
-		$query = vsprintf(str_replace("?", "%s", $query), $params);
-	}
-	$return = [];
-	$result = self::$conn->query($query);
-	while ($row = $result->fetch_assoc()) yield array_shift($row) => $row;
-}
-*/
-
 public static function begin() {
 	self::$conn->query("begin");
 }
@@ -505,7 +473,7 @@ public static function exportSchema($exclude_db=["information_schema", "performa
 			$pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
 			$pkey_k[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
 		}
-		if ($row["COLUMN_KEY"] != "") $idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+		if ($row["COLUMN_KEY"] != "") $idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
 		if ($row["EXTRA"] == "auto_increment") $autoinc[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ] = $row["COLUMN_NAME"];
 	}
 	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$pkey_k=".var_export($pkey_k, true).";".
@@ -534,3 +502,33 @@ class DBo__ { // call get_object_vars from outside to get only public vars
 		return get_object_vars($obj);
 	}
 }
+
+/* PHP 5.5 generators
+public static function valuesY($query, $params=null) {
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
+	$result = self::$conn->query($query);
+	while ($row = $result->fetch_row()[0]) yield $row;
+}
+public static function keyValueY($query, $params=null) {
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
+	$result = self::$conn->query($query);
+	while ($row = $result->fetch_row()) yield $row[0] => $row[1];
+}
+public static function keyValuesY($query, $params=null) {
+	if ($params) {
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
+	$return = [];
+	$result = self::$conn->query($query);
+	while ($row = $result->fetch_assoc()) yield array_shift($row) => $row;
+}
+*/
+
+// TODO2 implement copyTo(), moveTo(), archive()
