@@ -174,7 +174,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1],'t3'=>['a'=>1,'t2_a'=>1]]];\n".
 			"\$pkey=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a']]];\n".
 			"\$pkey_k=['test'=>['t2'=>['a'=>1],'t3'=>['a'=>1]]];\n".
-			"\$idx=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a']]];\n".
+			"\$idx=['test'=>['t2'=>['a'=>1],'t3'=>['a'=>1]]];\n".
 			"\$autoinc=['test'=>['t2'=>'a']];");
 	}
 
@@ -184,7 +184,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1],"t3"=>["a"=>1,"t2_a"=>1]]],
 			"pkey"=>["test"=>["t2"=>["a"],"t3"=>["a"]]],
 			"pkey_k"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1]]],
-			"idx"=>["test"=>["t2"=>["a"],"t3"=>["a"]]],
+			"idx"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1]]],
 			"autoinc"=>["test"=>["t2"=>"a"]]
 		];
 		$this->assertAttributeEquals($schema, "schema", "DBo");
