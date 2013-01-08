@@ -102,15 +102,6 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($row, ["a"=>"3", "b"=>"4", "c"=>"cd"]);
 	}
 
-	public function testObject() {
-		/* TODO implement
-		$obj = DBo::object("SELECT * FROM test.t1 WHERE a=3");
-		$this->assertEquals($obj, (object)["a"=>"3", "b"=>"4", "c"=>"cd"]);
-		$obj = DBo::object("SELECT * FROM test.t1 WHERE a=?", [3]);
-		$this->assertEquals($obj, (object)["a"=>"3", "b"=>"4", "c"=>"cd"]);
-		*/
-	}
-
 	public function testValue() {
 		$value = DBo::value("SELECT a FROM test.t1 WHERE a=3");
 		$this->assertEquals($value, "3");
@@ -295,6 +286,11 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 			$this->assertInstanceOf("DBo", $o);
 			$this->assertEquals($o->b, "a");
 		}
+	}
+
+	public function testOkeyValue() {
+		DBo::query("INSERT INTO test.t2 (a,b) VALUES (57,1),(58,2)");
+		$this->assertEquals(DBo::t2([57,58])->okeyValue("a", "b"), ["57"=>"1","58"=>"2"]);
 	}
 
 	public function testIterator() {
