@@ -230,7 +230,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t3(["t2_a"=>1])->t2()->buildQuery(), "SELECT a.* FROM test.t2 a,test.t3 b WHERE a.a=1 AND b.t2_a=1");
 		// TODO add join reduce breaker
 		
-		$this->assertEquals(DBo::t2(42)->buildQuery("UPDATE", null, "set"), "UPDATE test.t2 a WHERE a.a='42' SET set");
+		$this->assertEquals(DBo::t2(42)->buildQuery("UPDATE", null, "set"), "UPDATE test.t2 a SET set WHERE a.a='42'");
 	}
 
 	public function testExplain() {
