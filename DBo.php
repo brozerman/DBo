@@ -206,7 +206,11 @@ public function setFrom($arr) {
 	return $this;
 }
 
-public function save($key=null, $value=false) {
+public function insert($key=null, $value=false) {
+	return $this->save($key, $value, true);
+}
+
+public function save($key=null, $value=false, $insert=false) {
 	if ($key!=null) {
 		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
@@ -222,8 +226,7 @@ public function save($key=null, $value=false) {
 				$key = substr($key, 5);
 				$data[$key] = json_encode($value);
 			}
-			// TODO2 document
-			if (method_exists($this, "set_".$key)) $data[$key] = $this->{"set_".$key}($value);
+			if (method_exists($this, "set_".$key)) $data[$key] = $this->{"set_".$key}($value); // TODO2 document
 			if (!isset(self::$schema->col[$this->db][$this->table][$key])) unset($data[$key]);
 		}
 	}
@@ -231,17 +234,14 @@ public function save($key=null, $value=false) {
 	foreach ($data as $key=>$value) {
 		$data[$key] = $value===false ? str_replace("@", "a.", $key) : "a.".$key."=".$value;
 	}
-	$pkeys_k = &self::$schema->pkey_k[$this->db][$this->table];
-	$autoinc = self::$schema->autoinc[$this->db][$this->table];
 
-	// TODO fix, check auto_increment, force insert?, replace?, insert ignore?
-	if (true or (!$autoinc or isset($data[$autoinc])) or !array_diff_key($pkeys_k, $data)) {
-		return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
-	} else {
+	$autoinc = self::$schema->autoinc[$this->db][$this->table];
+	if ($insert or ($autoinc and !isset($data[$autoinc]))) { // TODO2 replace?, insert ignore?
 		$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
 		if ($autoinc) $this->$autoinc = $id;
 		return $id;
 	}
+	return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
 }
 
 public function exists() {
@@ -299,10 +299,9 @@ public function select(array $cols) {
 }
 
 public function getIterator() {
-	// TODO2 generator in PHP 5.5 faster?
 	$result = self::$conn->query($this->buildQuery());
 	$meta = $result->fetch_field();
-	return new DBo_($result, $meta->db, $meta->orgtable);
+	return new DBo_($result, $meta->db, $meta->orgtable); // TODO2 generator in PHP 5.5 faster?
 }
 
 public static function conn(mysqli $conn, $db) {
