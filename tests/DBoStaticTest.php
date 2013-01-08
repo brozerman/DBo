@@ -311,7 +311,11 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testGet() {
 		$this->assertEquals(DBo::t2(1)->a, 1);
 		$this->assertEquals(DBo::t2(1)->invalid, false);
-
+		$q = [null, "SELECT a.* FROM test.t2 a WHERE a.a=1", "SELECT a.b FROM test.t2 a WHERE a.a=1"];
+		for ($i=0; $i<2; $i++) {
+			$this->assertEquals(DBo::t2(1)->b, "a");
+			$this->assertEquals(end(mysqli_log::$queries), next($q));
+		}
 		DBo::query("INSERT INTO test.t2 VALUES (2,'a,b,c')");
 		DBo::query("INSERT INTO test.t2 VALUES (3,?)", ['{"a":"b"}']);
 		$this->assertEquals(DBo::t2(2)->arr_b, ["a","b","c"]);
