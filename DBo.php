@@ -73,7 +73,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 		$skip_join = true;
 		foreach ($elem->params as $i=>$param) {
-			if (is_numeric($param)) { // pkey given as const
+			if (is_numeric($param)) { // pkey given as const // TODO check is_numeric
 				$where[] = $alias.".".$pkeys[0]."=".($param==0 ? "'0'" : $param);
 			} else if (is_array($param) and isset($param[0])) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
 				// incomplete keys, e.g. 2 columns in array but primary key with 3 columns
@@ -110,7 +110,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 			$next_params = [];
 			foreach ($next->params as $param) { // prepare params of next table in join
-				if (is_numeric($param)) {
+				if (is_numeric($param)) { // TODO check is_numeric
 					$next_params[$next_pkeys[0]] = "=".($param==0 ? "'0'" : $param);
 				} else if (is_array($param) and isset($param[0])) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
@@ -206,22 +206,28 @@ public function setFrom($arr) {
 	return $this;
 }
 
-public function buildData($insert=false) { // TODO reference?
-	$data = DBo__::getPublicVars($this);
-	foreach ($data as $key=>$value) {
+public function setParams() {
+	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
+	foreach ($pkeys as $pkey) {
+		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
+	}
+	return $this;
+}
+
+public function buildData($insert=false) {
+	$data = [];
+	foreach (DBo__::getPublicVars($this) as $key=>$value) {
 		if ($value!==false) {
-			if (strpos($key, "arr_")===0) {
-				unset($data[$key]);
+			if (strpos($key, "arr_")===0) { // TODO check again
 				$key = substr($key, 4);
-				$data[$key] = implode(",", $value);
+				$value = implode(",", $value);
 			} else if (strpos($key, "json_")===0) {
-				unset($data[$key]);
 				$key = substr($key, 5);
-				$data[$key] = json_encode($value);
+				$value = json_encode($value);
 			}
-			if (method_exists($this, "set_".$key)) $data[$key] = $this->{"set_".$key}($value); // TODO2 document
-			if (!isset(self::$schema->col[$this->db][$this->table][$key])) unset($data[$key]);
 		}
+		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
+		if (isset(self::$schema->col[$this->db][$this->table][$key])) $data[$key] = $value;
 	}
 	return $data;
 }
@@ -234,10 +240,11 @@ public function insert($arr=null) {
 	$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
 	$autoinc = self::$schema->autoinc[$this->db][$this->table];
 	if ($autoinc) $this->$autoinc = $id;
+	//$this->setParams(); // TODO implement
 	return $id;
 }
 
-public function update($key=null, $value=false) {
+public function update($key=null, $value=false) { // TODO don't update primary keys
 	if ($key!=null) {
 		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
@@ -323,7 +330,7 @@ private static function _escape(&$params) {
 			$params[$key] = "NULL";
 		} else if ($param==="0" or $param===0) {
 			$params[$key] = "'0'";
-		} else if ($param!==false and !is_numeric($param)) {
+		} else if ($param!==false and !($param+0)) {
 			$params[$key] = "'".self::$conn->real_escape_string($param)."'";
 }	}	}
 
