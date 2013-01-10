@@ -50,7 +50,7 @@ protected function __construct($table, $params) {
 	// load schema once
 	if (self::$schema==null) {
 		require __DIR__."/schema.php";
-		self::$schema = new stdclass();
+		self::$schema = new stdClass();
 		self::$schema->col = &$col;
 		self::$schema->pkey = &$pkey;
 		self::$schema->pkey_k = &$pkey_k;
@@ -100,7 +100,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 				break;
 			}
 		}
-		if ($skip_join and !$got_pkey and count($elem->params)>0) $got_pkey = [$from, $where];
+		if ($skip_join and !$got_pkey and count($elem->params)) $got_pkey = [$from, $where];
 		if (!$skip_join and $got_pkey) $got_pkey = [$from, $where];
 
 		if (isset($this->stack[$key+1])) { // build join: sometable.sales_id = sales.id
@@ -142,7 +142,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 						$where[] = $alias.".".$pkey.$next_params[$elem->table."_".$pkey];
 					} else {
 						$need_join = true;
-						// if ($op===null) $op = "SELECT DISTINCT"; // TODO check automatic distinct for n:1
+						// if ($op===null) $op = "SELECT DISTINCT"; // TODO2 check automatic distinct for n:1
 						$where[] = $alias.".".$pkey."=".chr($key+98).".".$elem->table."_".$pkey;
 			}	}	}
 			if (!$match) {
@@ -206,14 +206,7 @@ public function setFrom($arr) {
 	return $this;
 }
 
-public function insert($key=null, $value=false) {
-	return $this->save($key, $value, true);
-}
-
-public function save($key=null, $value=false, $insert=false) {
-	if ($key!=null) {
-		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
-	}
+public function buildData($insert=false) { // TODO reference?
 	$data = DBo__::getPublicVars($this);
 	foreach ($data as $key=>$value) {
 		if ($value!==false) {
@@ -230,16 +223,28 @@ public function save($key=null, $value=false, $insert=false) {
 			if (!isset(self::$schema->col[$this->db][$this->table][$key])) unset($data[$key]);
 		}
 	}
-	self::_escape($data);
-	foreach ($data as $key=>$value) {
-		$data[$key] = $value===false ? str_replace("@", "a.", $key) : "a.".$key."=".$value;
-	}
+	return $data;
+}
 
+public function insert($arr=null) {
+	if ($arr!=null) $this->setFrom($arr);
+	$data = $this->buildData(true);
+	self::_escape($data);
+	foreach ($data as $key=>$val) $data[$key] = $val===false ? $key : $key."=".$val;
+	$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
 	$autoinc = self::$schema->autoinc[$this->db][$this->table];
-	if ($insert or ($autoinc and !isset($data[$autoinc]))) { // TODO2 replace?, insert ignore?
-		$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
-		if ($autoinc) $this->$autoinc = $id;
-		return $id;
+	if ($autoinc) $this->$autoinc = $id;
+	return $id;
+}
+
+public function update($key=null, $value=false) {
+	if ($key!=null) {
+		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
+	}
+	$data = $this->buildData();
+	self::_escape($data);
+	foreach ($data as $key=>$val) {
+		$data[$key] = $val===false ? str_replace("@", "a.", $key) : "a.".$key."=".$val;
 	}
 	return self::query($this->buildQuery("UPDATE", null, implode(",", $data)));
 }
