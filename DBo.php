@@ -116,7 +116,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
 						$param_t = [];
 						foreach ($next_pkeys as $pk=>$pv) {
-							if (!isset($param[0][$pk])) break;
+							if (!isset($param[0][$pk])) break; // TODO check null
 							foreach ($param as $k=>$v) $param_t[$pv][] = $v[$pk];
 						}
 						self::_escape($param_t);
@@ -198,17 +198,13 @@ public function __get($name) {
 }
 
 public function setFrom($arr) {
-	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
-	foreach ($arr as $key=>$val) {
-		$this->$key = $val;
-		if (isset($pkeys[$key])) $this->stack[0]->params[] = [$key=>$val];
-	}
+	foreach ($arr as $key=>$val) $this->$key = $val;
 	return $this;
 }
 
 public function setParams() {
 	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
-	foreach ($pkeys as $pkey) {
+	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
 		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
 	}
 	return $this;
@@ -216,9 +212,10 @@ public function setParams() {
 
 public function buildData($insert=false) {
 	$data = [];
+	$cols = &self::$schema->col[$this->db][$this->table];
 	foreach (DBo__::getPublicVars($this) as $key=>$value) {
 		if ($value!==false) {
-			if (strpos($key, "arr_")===0) { // TODO check again
+			if (strpos($key, "arr_")===0) {
 				$key = substr($key, 4);
 				$value = implode(",", $value);
 			} else if (strpos($key, "json_")===0) {
@@ -227,7 +224,7 @@ public function buildData($insert=false) {
 			}
 		}
 		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
-		if (isset(self::$schema->col[$this->db][$this->table][$key])) $data[$key] = $value;
+		if (isset($cols[$key])) $data[$key] = $value; // TODO don't update primary keys?
 	}
 	return $data;
 }
@@ -238,13 +235,13 @@ public function insert($arr=null) {
 	self::_escape($data);
 	foreach ($data as $key=>$val) $data[$key] = $val===false ? $key : $key."=".$val;
 	$id = self::query("INSERT INTO ".$this->db.".".$this->table." SET ".implode(",", $data));
-	$autoinc = self::$schema->autoinc[$this->db][$this->table];
+	$autoinc = @self::$schema->autoinc[$this->db][$this->table];
 	if ($autoinc) $this->$autoinc = $id;
-	//$this->setParams(); // TODO implement
+	$this->setParams();
 	return $id;
 }
 
-public function update($key=null, $value=false) { // TODO don't update primary keys
+public function update($key=null, $value=false) {
 	if ($key!=null) {
 		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
 	}
@@ -505,7 +502,7 @@ class DBo_ extends IteratorIterator {
 		$this->table = $table;
 	}
 	public function current() {
-		return DBo::init($this->table)->db($this->db)->setFrom(parent::current());
+		return DBo::init($this->table)->db($this->db)->setFrom(parent::current())->setParams();
 	}
 }
 class DBo__ { // call get_object_vars from outside to get only public vars
