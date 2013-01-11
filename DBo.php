@@ -175,13 +175,6 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
-	if (strpos($name, "arr_")===0) {
-		$this->$name = explode(",", $this->__get(substr($name, 4)));
-		return $this->$name;
-	} else if (strpos($name, "json_")===0) {
-		$this->$name = json_decode($this->__get(substr($name, 5)), true);
-		return $this->$name;
-	}
 	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
 	if ($this->data===false) {
 		// TODO2 add option to disable usage_col, populate members directly
@@ -193,7 +186,13 @@ public function __get($name) {
 	}
 	self::$usage_col[$this->usage_id][$name] = 1; // track used columns, reuse in 2nd run
 	// TODO2 load/store usage_col in apc
-	$this->$name = $this->data[$name];
+	if (substr($name, -4)==="_arr") {
+		$this->$name = explode(",", $this->data[$name]);
+	} else if (substr($name, -5)==="_json") {
+		$this->$name = json_decode($this->data[$name], true);
+	} else {
+		$this->$name = $this->data[$name];
+	}
 	return $this->$name;
 }
 
@@ -216,16 +215,14 @@ public function buildData($insert=false) {
 	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
 	foreach (DBo__::getPublicVars($this) as $key=>$value) {
 		if ($value!==false) {
-			if (strpos($key, "arr_")===0) {
-				$key = substr($key, 4);
+			if (substr($name, -4)==="_arr") {
 				$value = implode(",", $value);
-			} else if (strpos($key, "json_")===0) {
-				$key = substr($key, 5);
+			} else if (substr($name, -5)==="_json") {
 				$value = json_encode($value);
 			}
 		}
 		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
-		if (isset($cols[$key]) and ($insert or !isset($pkeys[$key]))) $data[$key] = $value;
+		if (isset($cols[$key]) and ($insert or !isset($pkeys[$key]))) $data[$key] = $value; // do not update pkeys
 	}
 	return $data;
 }
