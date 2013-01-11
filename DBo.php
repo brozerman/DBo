@@ -117,7 +117,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 						$param_t = [];
 						foreach ($next_pkeys as $pk=>$pv) {
 							if (!isset($param[0][$pk])) break; // TODO check null
-							foreach ($param as $k=>$v) $param_t[$pv][] = $v[$pk];
+							foreach ($param as $p) $param_t[$pv][] = $p[$pk];
 						}
 						self::_escape($param_t);
 						foreach ($param_t as $k=>$v) $next_params[$k] = " IN ".$v;
@@ -202,7 +202,7 @@ public function setFrom($arr) {
 	return $this;
 }
 
-public function setParams() {
+public function setParams() { // TODO protected
 	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
 	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
 		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
@@ -213,6 +213,7 @@ public function setParams() {
 public function buildData($insert=false) {
 	$data = [];
 	$cols = &self::$schema->col[$this->db][$this->table];
+	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
 	foreach (DBo__::getPublicVars($this) as $key=>$value) {
 		if ($value!==false) {
 			if (strpos($key, "arr_")===0) {
@@ -224,7 +225,7 @@ public function buildData($insert=false) {
 			}
 		}
 		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
-		if (isset($cols[$key])) $data[$key] = $value; // TODO don't update primary keys?
+		if (isset($cols[$key]) and ($insert or !isset($pkeys[$key]))) $data[$key] = $value;
 	}
 	return $data;
 }
