@@ -255,17 +255,34 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		DBo::t2()->insert(["a"=>100, "b"=>"hello"]);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=100,b='hello'");
 
-		$o = DBo::t2();
-		$o->a = 101;
-		$o->b = "hello";
-		$o->insert();
+		$obj = DBo::t2();
+		$obj->a = 101;
+		$obj->b = "hello";
+		$obj->insert();
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=101,b='hello'");
 
-		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 101);
+		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 102);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='hello'");
 
 		DBo::t2()->insert(["b=now()"=>false]);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b=now()");
+	}
+
+	public function testUpdate() {
+		DBo::query("INSERT INTO test.t2 (a,b) VALUES (103,'hello')");
+		DBo::t2(103)->update("b", "world");
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world' WHERE a.a=103");
+
+		DBo::t2(103)->update("b=now()");
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b=now() WHERE a.a=103");
+
+		DBo::t2(103)->update(["b"=>"world2"]);
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world2' WHERE a.a=103");
+
+		$obj = DBo::t2(103);
+		$obj->b = "world3";
+		$obj->update();
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world3' WHERE a.a=103");
 	}
 
 	public function testDelete() {
