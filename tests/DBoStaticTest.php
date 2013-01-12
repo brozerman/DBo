@@ -354,7 +354,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t3(1)->b_json, ["a"=>"b"]);
 
 		// utilize used columns in second run
-		$q = [null, "SELECT a.* FROM test.t1 a WHERE a.a=1 LIMIT 1", "SELECT a.b FROM test.t1 a WHERE a.a=1 LIMIT 1"];
+		$q = [null, "SELECT a.* FROM test.t1 a WHERE a.a=1 LIMIT 1", "SELECT a.c FROM test.t1 a WHERE a.a=1 LIMIT 1"];
 		for ($i=0; $i<2; $i++) {
 			$this->assertEquals(DBo::t1(1)->c, "ab");
 			$this->assertEquals(end(mysqli_log::$queries), next($q));
