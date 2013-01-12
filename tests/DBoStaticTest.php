@@ -251,6 +251,23 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse(DBo::t2(42)->exists());
 	}
 
+	public function testInsert() {
+		DBo::t2()->insert(["a"=>100, "b"=>"hello"]);
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=100,b='hello'");
+
+		$o = DBo::t2();
+		$o->a = 101;
+		$o->b = "hello";
+		$o->insert();
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=101,b='hello'");
+
+		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 101);
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='hello'");
+
+		DBo::t2()->insert(["b=now()"=>false]);
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b=now()");
+	}
+
 	public function testDelete() {
 		DBo::query("INSERT INTO test.t2 (a) VALUES (44)");
 		$this->assertEquals(DBo::value("SELECT count(*) FROM test.t2 WHERE a=44"), 1);
