@@ -262,7 +262,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$obj->b_arr = [1,2,3];
 		$obj->b_json = ["a"=>"b"];
 		$obj->insert();
-		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t4 SET a=2,b_arr='1,2,3',b_json='{\"a\":\"b\"}'");
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t4 SET a=2,b_arr='1,2,3',b_json='{\\\"a\\\":\\\"b\\\"}'");
 
 		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 101);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='world'");
