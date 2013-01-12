@@ -58,7 +58,6 @@ protected function __construct($table, $params) {
 	}
 	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
 	$this->usage_id = implode(",", end($trace));
-
 	if (isset(self::$usage_col[$this->usage_id])) {
 		$this->stack[0]->sel = "a.".implode(",a.", array_keys(self::$usage_col[$this->usage_id]));
 	}
@@ -184,7 +183,6 @@ public function __get($name) {
 		$this->data = self::$conn->query($this->buildQuery())->fetch_assoc();
 	}
 	self::$usage_col[$this->usage_id][$name] = 1; // track used columns, reuse in 2nd run
-	// TODO2 load/store usage_col in apc
 	if (substr($name, -4)==="_arr") {
 		$this->$name = explode(",", $this->data[$name]);
 	} else if (substr($name, -5)==="_json") {
@@ -200,9 +198,10 @@ public function setFrom($arr) {
 	return $this;
 }
 
-public function setParams() { // TODO protected
-	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
+public function setParams() {
+	$pkeys = &self::$schema->pkey[$this->db][$this->table];
 	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
+		$this->$pkey;
 		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
 	}
 	return $this;
@@ -354,7 +353,7 @@ public static function object($query, $params=null) {
 	}
 	$result = self::$conn->query($query);
 	$meta = $result->fetch_field();
-	return new DBo_($result, $meta->db, $meta->orgtable);
+	return new DBo_($result, $meta->db, $meta->orgtable, null);
 }
 
 public static function keyValue($query, $params=null, $cache=null) {
@@ -497,9 +496,10 @@ class DBo_ extends IteratorIterator {
 		$this->usage_id = $usage_id;
 	}
 	public function current() {
-		$obj = DBo::init($this->table)->db($this->db);
-		$obj->setFrom(["data" => parent::current(), "usage_id"=>$this->usage_id]);
-		return $obj->setParams();
+		$set = ["db"=>$this->db, "data"=>parent::current()];
+		if ($this->usage_id) $set["usage_id"] = $this->usage_id;
+		$obj = DBo::init($this->table);
+		return $obj->setFrom($set)->setParams();
 	}
 }
 class DBo__ { // call get_object_vars from outside to get only public vars
@@ -549,3 +549,4 @@ public function getIterator() { // TODO2 check if faster?
 
 // TODO2 add option to disable usage_col, populate members directly
 // TODO2 implement copyTo(), moveTo(), archive()
+// TODO2 load/store usage_col in apc
