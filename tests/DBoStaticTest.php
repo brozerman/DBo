@@ -359,6 +359,12 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 			$this->assertEquals(DBo::t1(1)->c, "ab");
 			$this->assertEquals(end(mysqli_log::$queries), next($q));
 		}
+		// utilize used columns in second run
+		$q = [null, "SELECT a.* FROM test.t1 a", "SELECT a.c FROM test.t1 a"];
+		for ($i=0; $i<2; $i++) {
+			foreach (DBo::t1() as $o) $o->c;
+			$this->assertEquals(end(mysqli_log::$queries), next($q));
+		}
 	}
 
 	public function testPrint_r() {
