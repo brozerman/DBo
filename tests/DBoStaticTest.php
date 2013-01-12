@@ -275,7 +275,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		DBo::t2(104)->update("b", "world");
 		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world' WHERE a.a=104");
 
-		DBo::t2(104)->update("b=now()");
+		DBo::t2(104)->update("@b=now()");
 		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b=now() WHERE a.a=104");
 
 		DBo::t2(104)->update(["b"=>"world2"]);
