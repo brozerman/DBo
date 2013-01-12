@@ -30,7 +30,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("INSERT INTO t2 VALUES (1,'a')");
 		$db->query("CREATE TABLE t3 (a INT PRIMARY KEY, t2_a INT)");
 		$db->query("INSERT INTO t3 VALUES (1,1)");
-		$db->query("CREATE TABLE t4 (a INT PRIMARY KEY, b_arr VARCHAR(20), c_json VARCHAR(20))");
+		$db->query("CREATE TABLE t4 (a INT PRIMARY KEY, b_arr VARCHAR(20), b_json VARCHAR(20))");
 		$db->query("INSERT INTO t4 VALUES (1,'a,b,c','{\"a\":\"b\"}')");
 		$db->close();
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
@@ -173,7 +173,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testExportSchema() {
 		DBo::exportSchema();
 		$this->assertEquals(file_get_contents(__DIR__."/../schema.php"), "<?php\n".
-			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1],'t3'=>['a'=>1,'t2_a'=>1],'t4'=>['a'=>1,'b_arr'=>1,'c_json'=>1]]];\n".
+			"\$col=['test'=>['t1'=>['a'=>1,'b'=>1,'c'=>1],'t2'=>['a'=>1,'b'=>1],'t3'=>['a'=>1,'t2_a'=>1],'t4'=>['a'=>1,'b_arr'=>1,'b_json'=>1]]];\n".
 			"\$pkey=['test'=>['t2'=>[0=>'a'],'t3'=>[0=>'a'],'t4'=>[0=>'a']]];\n".
 			"\$pkey_k=['test'=>['t2'=>['a'=>1],'t3'=>['a'=>1],'t4'=>['a'=>1]]];\n".
 			"\$idx=['test'=>['t2'=>['a'=>1],'t3'=>['a'=>1],'t4'=>['a'=>1]]];\n".
@@ -183,7 +183,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testLoadSchema() {
 		DBo::hello();
 		$schema = (object)[
-			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1],"t3"=>["a"=>1,"t2_a"=>1],"t4"=>["a"=>1,"b_arr"=>1,"c_json"=>1]]],
+			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1],"t3"=>["a"=>1,"t2_a"=>1],"t4"=>["a"=>1,"b_arr"=>1,"b_json"=>1]]],
 			"pkey"=>["test"=>["t2"=>["a"],"t3"=>["a"],"t4"=>["a"]]],
 			"pkey_k"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1],"t4"=>["a"=>1]]],
 			"idx"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1],"t4"=>["a"=>1]]],
@@ -262,7 +262,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$obj->b_arr = [1,2,3];
 		$obj->b_json = ["a"=>"b"];
 		$obj->insert();
-		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t4 SET a=2,b_arr='1,2,3',c_json='{\"a\":\"b\"}'");
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t4 SET a=2,b_arr='1,2,3',b_json='{\"a\":\"b\"}'");
 
 		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 101);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='world'");
