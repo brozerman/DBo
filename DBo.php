@@ -305,7 +305,7 @@ public function select(array $cols) { // TODO2 document
 public function getIterator() {
 	$result = self::$conn->query($this->buildQuery());
 	$meta = $result->fetch_field();
-	return new DBo_($result, $meta->db, $meta->orgtable, $this->usage_id);
+	return new DBo_($result, $meta->db, $meta->orgtable, $this->usage_id); // TODO2 PHP 5.5. is generator faster?
 }
 
 public static function conn(mysqli $conn, $db) {
@@ -534,17 +534,6 @@ public static function keyValuesY($query, $params=null) {
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_assoc()) yield array_shift($row) => $row;
 }
-public function getIterator() { // TODO2 check if faster?
-	$result = self::$conn->query($this->buildQuery());
-	$meta = $result->fetch_field();
-	foreach ($result as $row) {
-		$obj = DBo::init($meta->orgtable)->db($meta->db);
-		$obj->data = $row;
-		$obj->usage_id = $this->usage_id;
-		yield $obj->setParams();
-	}
-}
-
 */
 
 // TODO2 add option to disable usage_col, populate members directly
