@@ -80,21 +80,21 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testInsertUpdateDeleteReplace() {
-		DBo::query("CREATE TABLE test.t4 (a INT AUTO_INCREMENT PRIMARY KEY)");
+		DBo::query("CREATE TABLE test.t5 (a INT AUTO_INCREMENT PRIMARY KEY)");
 
-		$id = DBo::query("INSERT INTO test.t4 VALUES ()");
+		$id = DBo::query("INSERT INTO test.t5 VALUES ()");
 		$this->assertEquals($id, "1");
 
-		$id = DBo::query("INSERT INTO test.t4 VALUES ()");
+		$id = DBo::query("INSERT INTO test.t5 VALUES ()");
 		$this->assertEquals($id, "2");
-		$this->assertEquals(DBo::query("UPDATE test.t4 SET a=a-1"), 2);
+		$this->assertEquals(DBo::query("UPDATE test.t5 SET a=a-1"), 2);
 
-		DBo::query("INSERT INTO test.t4 VALUES ()");
-		$this->assertEquals(DBo::query("DELETE FROM test.t4"), 3);
+		DBo::query("INSERT INTO test.t5 VALUES ()");
+		$this->assertEquals(DBo::query("DELETE FROM test.t5"), 3);
 
-		DBo::query("INSERT INTO test.t4 VALUES ()");
-		$this->assertEquals(DBo::query("REPLACE INTO test.t4 VALUES (4)"), 4);
-		DBo::query("DROP TABLE test.t4");
+		DBo::query("INSERT INTO test.t5 VALUES ()");
+		$this->assertEquals(DBo::query("REPLACE INTO test.t5 VALUES (4)"), 4);
+		DBo::query("DROP TABLE test.t5");
 	}
 
 	public function testOne() {
