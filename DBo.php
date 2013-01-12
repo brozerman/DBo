@@ -215,9 +215,9 @@ public function buildData($insert=false) {
 	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
 	foreach (DBo__::getPublicVars($this) as $key=>$value) {
 		if ($value!==false) {
-			if (substr($name, -4)==="_arr") {
+			if (substr($key, -4)==="_arr") {
 				$value = implode(",", $value);
-			} else if (substr($name, -5)==="_json") {
+			} else if (substr($key, -5)==="_json") {
 				$value = json_encode($value);
 			}
 		}
