@@ -29,7 +29,6 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("CREATE TABLE t2 (a INT PRIMARY KEY, t1_a INT)");
 		$db->query("INSERT INTO t2 VALUES (1,1)");
 		$db->query("CREATE TABLE t3 (a INT PRIMARY KEY, b_arr VARCHAR(20), b_json VARCHAR(20))");
-		$db->query("INSERT INTO t3 VALUES (1,'a,b,c','{\"a\":\"b\"}')");
 		$db->close();
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
 		DBo::exportSchema();
@@ -350,9 +349,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t1(1)->a, 1);
 		$this->assertEquals(DBo::t1(1)->invalid, false);
 
-		DBo::query("INSERT INTO test.t1 VALUES (2,'a,b,c')");
-		DBo::query("INSERT INTO test.t1 VALUES (3,?)", ['{"a":"b"}']);
-
+		$db->query("INSERT INTO test.t3 VALUES (1,'a,b,c','{\"a\":\"b\"}')");
 		$this->assertEquals(DBo::t3(1)->b_arr, ["a","b","c"]);
 		$this->assertEquals(DBo::t3(1)->b_json, ["a"=>"b"]);
 
