@@ -349,7 +349,6 @@ public static function one($query, $params=null) {
 	return self::$conn->query($query)->fetch_assoc();
 }
 
-// TODO add caching for $result?
 public static function object($query, $params=null) {
 	if ($params) {
 		self::_escape($params);
