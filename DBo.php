@@ -241,7 +241,7 @@ public function insert($arr=null) {
 
 public function update($key=null, $value=false) {
 	if ($key!=null) {
-		if (is_array($key)) $this->setFrom($arr); else $this->$key = $value;
+		if (is_array($key)) $this->setFrom($key); else $this->$key = $value;
 	}
 	$data = $this->buildData();
 	self::_escape($data);
