@@ -222,7 +222,7 @@ public function buildData($insert=false) {
 			}
 		}
 		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
-		if (isset($cols[$key]) and ($insert or !isset($pkeys[$key]))) $data[$key] = $value; // do not update pkeys
+		if ((isset($cols[$key]) and ($insert or !isset($pkeys[$key]))) or $value===false) $data[$key] = $value; // do not update pkeys
 	}
 	return $data;
 }
