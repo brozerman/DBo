@@ -325,7 +325,7 @@ private static function _escape(&$params) {
 			$params[$key] = "NULL";
 		} else if ($param==="0" or $param===0) {
 			$params[$key] = "'0'";
-		} else if ($param!==false and !($param+0)) {
+		} else if ($param!==false and !is_numeric($param)) {
 			$params[$key] = "'".self::$conn->real_escape_string($param)."'";
 }	}	}
 
