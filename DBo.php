@@ -201,8 +201,8 @@ public function setFrom($arr) {
 public function setParams() {
 	$pkeys = &self::$schema->pkey[$this->db][$this->table];
 	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
-		$this->$pkey;
 		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
+		  else if (isset($this->data[$pkey])) $this->stack[0]->params[] = [$pkey=>$this->data[$pkey]];
 	}
 	return $this;
 }
