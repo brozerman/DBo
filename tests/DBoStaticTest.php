@@ -323,7 +323,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		}
 		foreach (DBo::object("SELECT b FROM test.t1 WHERE a=?", [1]) as $o) {
 			$this->assertInstanceOf("DBo", $o);
-			$this->assertEquals($o->b, "a");
+			$this->assertEquals($o->c, "ab");
 		}
 	}
 
@@ -365,7 +365,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testPrint_r() {
-		$this->expectOutputString("Array\n(\n    [a] => 1\n    [b] => a\n)\n");
+		$this->expectOutputString("Array\n(\n    [a] => 1\n    [b] => 2\n    [c] => ab\n)\n");
 		DBo::t1(1)->print_r();
 	}
 }
