@@ -264,7 +264,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=101,b='hello'");
 
 		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 102);
-		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='hello'");
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='world'");
 
 		DBo::t2()->insert(["b=now()"=>false]);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b=now()");
