@@ -47,8 +47,7 @@ protected function __construct($table, $params) {
 	$this->db = &$this->stack[0]->db;
 	$this->table = &$this->stack[0]->table;
 
-	// load schema once
-	if (self::$schema==null) {
+	if (self::$schema==null) { // load schema once
 		require __DIR__."/schema.php";
 		self::$schema = new stdClass();
 		self::$schema->col = &$col;
@@ -59,6 +58,10 @@ protected function __construct($table, $params) {
 	}
 	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
 	$this->usage_id = implode(",", end($trace));
+
+	if (isset(self::$usage_col[$this->usage_id])) {
+		$this->stack[0]->sel = "a.".implode(",a.", array_keys(self::$usage_col[$this->usage_id]));
+	}
 }
 
 public function buildQuery($op=null, $sel=null, $set=null) {
@@ -177,10 +180,6 @@ public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
 	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
 	if ($this->data===false) {
-		// TODO2 add option to disable usage_col, populate members directly
-		if (isset(self::$usage_col[$this->usage_id]) and $this->stack[0]->sel=="a.*") {
-			$this->select(array_keys(self::$usage_col[$this->usage_id]));
-		}
 		$this->stack[0]->limit = 1;
 		$this->data = self::$conn->query($this->buildQuery())->fetch_assoc();
 	}
@@ -299,8 +298,7 @@ public function limit($count, $offset=0) {
 	return $this;
 }
 
-// TODO2 document
-public function select(array $cols) {
+public function select(array $cols) { // TODO2 document
 	$this->stack[0]->sel = "a.".implode(",a.", $cols);
 	return $this;
 }
@@ -308,7 +306,7 @@ public function select(array $cols) {
 public function getIterator() {
 	$result = self::$conn->query($this->buildQuery());
 	$meta = $result->fetch_field();
-	return new DBo_($result, $meta->db, $meta->orgtable); // TODO2 generator in PHP 5.5 faster?
+	return new DBo_($result, $meta->db, $meta->orgtable, $this->usage_id);
 }
 
 public static function conn(mysqli $conn, $db) {
@@ -492,13 +490,16 @@ public static function exportSchema($exclude_db=["information_schema", "performa
 }
 
 class DBo_ extends IteratorIterator {
-	public function __construct (Traversable $iterator, $db, $table) {
+	public function __construct (Traversable $iterator, $db, $table, $usage_id) {
 		parent::__construct($iterator);
 		$this->db = $db;
 		$this->table = $table;
+		$this->usage_id = $usage_id;
 	}
 	public function current() {
-		return DBo::init($this->table)->db($this->db)->setFrom(parent::current())->setParams();
+		$obj = DBo::init($this->table)->db($this->db);
+		$obj->setFrom(["data" => parent::current(), "usage_id"=>$this->usage_id]);
+		return $obj->setParams();
 	}
 }
 class DBo__ { // call get_object_vars from outside to get only public vars
@@ -533,6 +534,18 @@ public static function keyValuesY($query, $params=null) {
 	$result = self::$conn->query($query);
 	while ($row = $result->fetch_assoc()) yield array_shift($row) => $row;
 }
+public function getIterator() { // TODO2 check if faster?
+	$result = self::$conn->query($this->buildQuery());
+	$meta = $result->fetch_field();
+	foreach ($result as $row) {
+		$obj = DBo::init($meta->orgtable)->db($meta->db);
+		$obj->data = $row;
+		$obj->usage_id = $this->usage_id;
+		yield $obj->setParams();
+	}
+}
+
 */
 
+// TODO2 add option to disable usage_col, populate members directly
 // TODO2 implement copyTo(), moveTo(), archive()
