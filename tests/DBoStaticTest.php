@@ -349,7 +349,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(DBo::t1(1)->a, 1);
 		$this->assertEquals(DBo::t1(1)->invalid, false);
 
-		$db->query("INSERT INTO test.t3 VALUES (1,'a,b,c','{\"a\":\"b\"}')");
+		DBo::query("INSERT INTO test.t3 VALUES (1,'a,b,c','{\"a\":\"b\"}')");
 		$this->assertEquals(DBo::t3(1)->b_arr, ["a","b","c"]);
 		$this->assertEquals(DBo::t3(1)->b_json, ["a"=>"b"]);
 
