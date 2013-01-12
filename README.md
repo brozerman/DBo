@@ -7,7 +7,7 @@ Install
 -------
 Requires Git, PHP 5.4+
 <pre>
-git clone git@github.com:thomasbley/DBo.git
+git clone git://github.com/thomasbley/DBo.git .
 
 php -r "\
 include 'DBo.php';\
@@ -18,9 +18,6 @@ DBo::exportSchema(); // generate schema.php"
 Specification
 -------------
 http://we-love-php.blogspot.de/2012/08/how-to-implement-small-and-fast-orm.html
-
-Get started
------------
 
 Testing
 -------
