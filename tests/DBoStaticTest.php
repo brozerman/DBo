@@ -23,6 +23,9 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 	public static function setUpBeforeClass() {
 		$db = new mysqli("127.0.0.1", "root", "", "test");
+		$db->query("DROP TABLE IF EXISTS test.t1");
+		$db->query("DROP TABLE IF EXISTS test.t2");
+		$db->query("DROP TABLE IF EXISTS test.t3");
 		$db->query("CREATE TABLE test.t1 (a INT, b INT, c VARCHAR(20))");
 		$db->query("INSERT INTO test.t1 VALUES (1,2,'ab'),(3,4,'cd'),(5,6,'ef');");
 		$db->query("CREATE TABLE test.t2 (a INT AUTO_INCREMENT PRIMARY KEY, b VARCHAR(20))");
@@ -30,7 +33,6 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("CREATE TABLE test.t3 (a INT PRIMARY KEY, t2_a INT)");
 		$db->query("INSERT INTO test.t3 VALUES (1,1)");
 		$db->close();
-
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
 		DBo::exportSchema();
 	}
