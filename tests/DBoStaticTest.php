@@ -33,6 +33,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		$db->query("CREATE TABLE test.t3 (a INT PRIMARY KEY, t2_a INT)");
 		$db->query("INSERT INTO test.t3 VALUES (1,1)");
 		$db->query("CREATE TABLE test.t4 (a INT PRIMARY KEY, b_arr VARCHAR(20), c_json VARCHAR(20))");
+		$db->query("INSERT INTO test.t4 VALUES (1,'a,b,c','{\"a\":\"b\"}')");
 		$db->close();
 		DBo::conn(new mysqli_log("127.0.0.1", "root", "", "test"), "test");
 		DBo::exportSchema();
@@ -258,13 +259,14 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 		DBo::t2()->insert(["a"=>100, "b"=>"hello"]);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=100,b='hello'");
 
-		$obj = DBo::t2();
-		$obj->a = 101;
-		$obj->b = "hello";
+		$obj = DBo::t4();
+		$obj->a = 2;
+		$obj->b_arr = [1,2,3];
+		$obj->b_json = ["a"=>"b"];
 		$obj->insert();
-		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET a=101,b='hello'");
+		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t4 SET a=2,b_arr='1,2,3',c_json='{\"a\":\"b\"}'");
 
-		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 102);
+		$this->assertEquals(DBo::t2()->insert(["b"=>"world"]), 101);
 		$this->assertEquals(end(mysqli_log::$queries), "INSERT INTO test.t2 SET b='world'");
 
 		DBo::t2()->insert(["b=now()"=>false]);
@@ -272,20 +274,20 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testUpdate() {
-		DBo::query("INSERT INTO test.t2 (a,b) VALUES (104,'hello')");
-		DBo::t2(104)->update("b", "world");
-		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world' WHERE a.a=104");
+		DBo::query("INSERT INTO test.t2 (a,b) VALUES (103,'hello')");
+		DBo::t2(103)->update("b", "world");
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world' WHERE a.a=103");
 
-		DBo::t2(104)->update("@b=now()");
-		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b=now() WHERE a.a=104");
+		DBo::t2(103)->update("@b=now()");
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b=now() WHERE a.a=103");
 
-		DBo::t2(104)->update(["b"=>"world2"]);
-		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world2' WHERE a.a=104");
+		DBo::t2(103)->update(["b"=>"world2"]);
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world2' WHERE a.a=103");
 
-		$obj = DBo::t2(104);
+		$obj = DBo::t2(103);
 		$obj->b = "world3";
 		$obj->update();
-		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world3' WHERE a.a=104");
+		$this->assertEquals(end(mysqli_log::$queries), "UPDATE test.t2 a SET a.b='world3' WHERE a.a=103");
 	}
 
 	public function testDelete() {
@@ -354,9 +356,9 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
 		DBo::query("INSERT INTO test.t2 VALUES (2,'a,b,c')");
 		DBo::query("INSERT INTO test.t2 VALUES (3,?)", ['{"a":"b"}']);
-		// TODO fix
-		//$this->assertEquals(DBo::t2(2)->b_arr, ["a","b","c"]);
-		//$this->assertEquals(DBo::t2(3)->b_json, ["a"=>"b"]);
+
+		$this->assertEquals(DBo::t4(1)->b_arr, ["a","b","c"]);
+		$this->assertEquals(DBo::t4(1)->b_json, ["a"=>"b"]);
 
 		// utilize used columns in second run
 		$q = [null, "SELECT a.* FROM test.t2 a WHERE a.a=1 LIMIT 1", "SELECT a.b FROM test.t2 a WHERE a.a=1 LIMIT 1"];
