@@ -183,7 +183,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testLoadSchema() {
 		DBo::hello();
 		$schema = (object)[
-			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1],"t3"=>["a"=>1,"t2_a"=>1],"t4"=>["a"=>1,"b_arr"=>1,"c_json"]]],
+			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"b"=>1],"t3"=>["a"=>1,"t2_a"=>1],"t4"=>["a"=>1,"b_arr"=>1,"c_json"=>1]]],
 			"pkey"=>["test"=>["t2"=>["a"],"t3"=>["a"],"t4"=>["a"]]],
 			"pkey_k"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1],"t4"=>["a"=>1]]],
 			"idx"=>["test"=>["t2"=>["a"=>1],"t3"=>["a"=>1],"t4"=>["a"=>1]]],
