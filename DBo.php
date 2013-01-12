@@ -427,19 +427,18 @@ public function ovalues($column, $cache=null) {
 	return self::values($this->buildQuery(), null, $cache);
 }
 
+/* TODO implement, cache, static cache?, arrayY?
 public function cache($cache=null) {
-	// TODO implement, cache, static cache() ?
 	$result = [];
 	foreach ($this->getIterator() as $row) $result[] = $row;
 	return $result;
 }
-
 public function oarray($cache=null) {
-	// TODO cache, arrayY
 	$result = [];
-	foreach (self::query($this->buildQuery()) as $row) $result[] = $row;
+	foreach ($this->getIterator() as $row) $result[] = $row;
 	return $result;
 }
+*/
 
 public static function begin() {
 	self::$conn->query("begin");
