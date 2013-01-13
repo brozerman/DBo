@@ -332,7 +332,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testSetFrom() {
-		$arr = ["a"=>10 "b"=>20, "c"=>"hello"];
+		$arr = ["a"=>10, "b"=>20, "c"=>"hello"];
 		$obj = DBo::t1()->setFrom($arr);
 		$this->assertEquals(get_object_vars($obj), $arr);
 	}
