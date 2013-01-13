@@ -19,6 +19,7 @@ protected $db = "";
 protected $table = "";
 protected $data = false;
 protected $usage_id = false;
+protected $col = [];
 
 // forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
 public static function __callStatic($method, $args) {
@@ -56,10 +57,12 @@ protected function __construct($table, $params) {
 		self::$schema->idx = &$idx;
 		self::$schema->autoinc = &$autoinc;
 	}
+	$this->col = &self::$schema->col[$this->db][$this->table];
+
 	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
 	$this->usage_id = implode(",", end($trace));
 	if (isset(self::$usage_col[$this->usage_id])) {
-		$this->stack[0]->sel = "a.".implode(",a.", array_keys(self::$usage_col[$this->usage_id]));
+		$this->stack[0]->sel = "a.".implode(",a.", array_keys(self::$usage_col[$this->usage_id])); // TODO2 optimize
 	}
 }
 
@@ -148,16 +151,15 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 						$where[] = $alias.".".$pkey."=".chr($key+98).".".$elem->table."_".$pkey;
 			}	}	}
 			if (!$match) {
-				$col = &self::$schema->col[$elem->db][$elem->table];
 				foreach ($next_pkeys as $pkey) {
-					if (isset($col[$next->table."_".$pkey])) {
+					if (isset($this->col[$next->table."_".$pkey])) {
 						if (isset($next_params[$pkey])) { // skip join, a.t_id=b.id and b.id=42 => a.t_id=42
 							$where[] = $alias.".".$next->table."_".$pkey.$next_params[$pkey];
 						} else {
 							$need_join = true;
 							$where[] = $alias.".".$next->table."_".$pkey."=".chr($key+98).".".$pkey;
 			}	}	}	}
-			if ($where_count == count($where)) throw new Exception("Error: producing cross product: ".$elem->table);
+			if ($where_count == count($where)) throw new Exception("Invalid join, cross product: ".$elem->table);
 			if (!$need_join and !$got_pkey) $got_pkey = [$from, $where];
 		}
 	}
@@ -177,7 +179,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 public function __get($name) {
 	if (method_exists($this, "get_".$name)) return $this->{"get_".$name}();
-	if (!isset(self::$schema->col[$this->db][$this->table][$name])) return false;
+	if (!isset($this->col[$name])) return false;
 	if ($this->data===false) {
 		$this->stack[0]->limit = 1;
 		$this->data = self::$conn->query($this->buildQuery())->fetch_assoc();
@@ -209,7 +211,6 @@ public function setParams() {
 
 public function buildData($insert=false) {
 	$data = [];
-	$cols = &self::$schema->col[$this->db][$this->table];
 	$pkeys = &self::$schema->pkey_k[$this->db][$this->table];
 	foreach (DBo__::getPublicVars($this) as $key=>$value) {
 		if ($value!==false) {
@@ -220,7 +221,7 @@ public function buildData($insert=false) {
 			}
 		}
 		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
-		if ((isset($cols[$key]) and ($insert or !isset($pkeys[$key]))) or $value===false) $data[$key] = $value; // do not update pkeys
+		if ((isset($this->col[$key]) and ($insert or !isset($pkeys[$key]))) or $value===false) $data[$key] = $value; // do not update pkeys
 	}
 	return $data;
 }
@@ -260,14 +261,17 @@ public function count() {
 }
 
 public function avg($column) {
+	if (!isset($this->col[$column])) throw new Exception("Invalid column");
 	return self::value($this->buildQuery("SELECT", "avg(a.".$column.")"));
 }
 
 public function sum($column) {
+	if (!isset($this->col[$column])) throw new Exception("Invalid column");
 	return self::value($this->buildQuery("SELECT", "sum(a.".$column.")"));
 }
 
 public function stddev($column) {
+	if (!isset($this->col[$column])) throw new Exception("Invalid column");
 	return self::value($this->buildQuery("SELECT", "stddev(a.".$column.")"));
 }
 
@@ -276,7 +280,7 @@ public function delete() {
 }
 
 public function __toString() {
-	return $this->buildQuery();
+	return $this->buildQuery(); // TODO2 handle exceptions?
 }
 
 public function explain() {
@@ -288,6 +292,7 @@ public function print_r() {
 }
 
 public function db($database) {
+	if (!isset(self::$schema->col[$database])) throw new Exception("Invalid database");
 	$this->stack[0]->db = $database;
 	return $this;
 }
@@ -298,6 +303,7 @@ public function limit($count, $offset=0) {
 }
 
 public function select(array $cols) { // TODO2 document
+	foreach ($cols as $col) if (!isset($this->col[$col])) throw new Exception("Invalid column");
 	$this->stack[0]->sel = "a.".implode(",a.", $cols);
 	return $this;
 }
@@ -369,6 +375,7 @@ public static function keyValue($query, $params=null, $cache=null) {
 }
 
 public function okeyValue($column_key, $column_value, $cache=null) {
+	if (!isset($this->col[$column_key]) or !isset($this->col[$column_value])) throw new Exception("Invalid column");
 	$this->stack[0]->sel = "a.".$column_key.", a.".$column_value;
 	return self::keyValue($this->buildQuery(), null, $cache);
 }
@@ -420,6 +427,7 @@ public static function values($query, $params=null, $cache=null) {
 }
 
 public function ovalues($column, $cache=null) {
+	if (!isset($this->col[$column])) throw new Exception("Invalid column");
 	$this->stack[0]->sel = "a.".$column; // TODO distinct?
 	return self::values($this->buildQuery(), null, $cache);
 }
