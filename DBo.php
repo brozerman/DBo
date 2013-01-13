@@ -78,7 +78,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 		$skip_join = true;
 		foreach ($elem->params as $i=>$param) {
-			if (is_numeric($param)) { // pkey given as const // TODO check is_numeric
+			if (is_numeric($param)) { // pkey given as const // TODO2 check is_numeric
 				$where[] = $alias.".".$pkeys[0]."=".($param==0 ? "'0'" : $param);
 			} else if (is_array($param) and isset($param[0])) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
 				// incomplete keys, e.g. 2 columns in array but primary key with 3 columns
@@ -115,7 +115,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 			$next_params = [];
 			foreach ($next->params as $param) { // prepare params of next table in join
-				if (is_numeric($param)) { // TODO check is_numeric
+				if (is_numeric($param)) { // TODO2 check is_numeric
 					$next_params[$next_pkeys[0]] = "=".($param==0 ? "'0'" : $param);
 				} else if (is_array($param) and isset($param[0])) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
