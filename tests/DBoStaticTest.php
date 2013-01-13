@@ -178,7 +178,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testLoadSchema() {
-		DBo::hello();
+		DBo::hellohello();
 		$schema = (object)[
 			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"t1_a"=>1],"t3"=>["a"=>1,"b_arr"=>1,"b_json"=>1]]],
 			"pkey"=>["test"=>["t1"=>["a"],"t2"=>["a"],"t3"=>["a"]]],
@@ -242,7 +242,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testDb() {
-		$this->assertEquals(DBo::sometable()->db("mysql"), "SELECT a.* FROM mysql.sometable a");
+		$this->assertEquals(DBo::sometable()->db("test"), "SELECT a.* FROM test.sometable a");
 	}
 
 	public function testExists() {
@@ -335,11 +335,13 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testOkeyValue() {
 		DBo::query("INSERT INTO test.t1 (a,b) VALUES (57,1),(58,2)");
 		$this->assertEquals(DBo::t1([-1,57,58])->okeyValue("a", "b"), ["57"=>"1","58"=>"2"]);
+		// TODO test exception
 	}
 
 	public function testOvalues() {
 		DBo::query("INSERT INTO test.t1 (a) VALUES (59),(60)");
 		$this->assertEquals(DBo::t1([59,60])->ovalues("a"), ["59","60"]);
+		// TODO test exception
 	}
 
 	public function testIterator() {
