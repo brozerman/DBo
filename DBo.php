@@ -200,7 +200,9 @@ public function setFrom($arr) {
 	return $this;
 }
 
-public function setParams() {
+public function setParams($arr=[]) { // overwrites protected members!
+	foreach ($arr as $key=>$val) $this->$key = $val;
+
 	$pkeys = &self::$schema->pkey[$this->db][$this->table];
 	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
 		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
@@ -504,7 +506,7 @@ class DBo_ extends IteratorIterator {
 	public function current() {
 		$set = ["db"=>$this->db, "data"=>parent::current()];
 		if ($this->usage_id) $set["usage_id"] = $this->usage_id;
-		return DBo::init($this->table)->setFrom($set)->setParams();
+		return DBo::init($this->table)->setParams($set);
 	}
 }
 class DBo__ { // call from outside to get/set only public vars
