@@ -242,8 +242,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testDb() {
-		// TODO implement
-		// $this->assertEquals(DBo::sometable()->db("test2"), "SELECT a.* FROM test2.sometable a");
+		$this->assertEquals(DBo::sometable()->db("test"), "SELECT a.* FROM test.sometable a");
 	}
 
 	public function testExists() {
