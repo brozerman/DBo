@@ -152,17 +152,17 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testInit() {
-		$stack = ["sel"=>"a.*", "table"=>"hello", "params"=>[42], "db"=>"test"];
-		$dbo = DBo::init("hello", [42]);
+		$stack = ["sel"=>"a.*", "table"=>"t1", "params"=>[42], "db"=>"test"];
+		$dbo = DBo::init("t1", [42]);
 		$this->assertInstanceOf("DBo", $dbo);
 		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
 
-		$dbo = DBo::hello(42);
+		$dbo = DBo::t1(42);
 		$this->assertInstanceOf("DBo", $dbo);
 		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
 
 		$stack["params"] = [[42,13]];
-		$dbo = DBo::hello([42,13]);
+		$dbo = DBo::t1([42,13]);
 		$this->assertInstanceOf("DBo", $dbo);
 		$this->assertAttributeEquals([(object)$stack], "stack", $dbo);
 	}
@@ -178,7 +178,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testLoadSchema() {
-		DBo::hellohello();
+		DBo::t1();
 		$schema = (object)[
 			"col"=>["test"=>["t1"=>["a"=>1, "b"=>1, "c"=>1],"t2"=>["a"=>1,"t1_a"=>1],"t3"=>["a"=>1,"b_arr"=>1,"b_json"=>1]]],
 			"pkey"=>["test"=>["t1"=>["a"],"t2"=>["a"],"t3"=>["a"]]],
