@@ -205,8 +205,8 @@ public function setParams($arr=[]) { // overwrites protected members!
 
 	$pkeys = &self::$schema->pkey[$this->db][$this->table];
 	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
-		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey];
-		  else if (isset($this->data[$pkey])) $this->stack[0]->params[] = [$pkey=>$this->data[$pkey]];
+		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey]; // insert (complete)
+			else if (isset($this->data[$pkey])) $this->stack[0]->params[] = [$pkey=>$this->data[$pkey]]; // select
 	}
 	return $this;
 }
