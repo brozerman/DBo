@@ -78,7 +78,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 		$skip_join = true;
 		foreach ($elem->params as $i=>$param) {
-			if (is_numeric($param)) { // pkey given as const // TODO2 check is_numeric
+			if (is_numeric($param)) { // pkey given as const
 				$where[] = $alias.".".$pkeys[0]."=".($param==0 ? "'0'" : $param);
 			} else if (is_array($param) and isset($param[0])) { // [[1,2],[3,4]] => (id,id2) in ((1,2),(3,4))
 				// incomplete keys, e.g. 2 columns in array but primary key with 3 columns
@@ -115,7 +115,7 @@ public function buildQuery($op=null, $sel=null, $set=null) {
 
 			$next_params = [];
 			foreach ($next->params as $param) { // prepare params of next table in join
-				if (is_numeric($param)) { // TODO2 check is_numeric
+				if (is_numeric($param)) {
 					$next_params[$next_pkeys[0]] = "=".($param==0 ? "'0'" : $param);
 				} else if (is_array($param) and isset($param[0])) {
 					if (is_array($param[0])) { // [[1,2],[3,4]] => id in (1,3), id2 in (2,4)
@@ -196,7 +196,7 @@ public function __get($name) {
 }
 
 public function setFrom($arr) {
-	foreach ($arr as $key=>$val) $this->$key = $val; // TODO fix don't overwrite meta data
+	DBo__::setPublicVars($this, $arr);
 	return $this;
 }
 
@@ -227,7 +227,7 @@ public function buildData($insert=false) {
 }
 
 public function insert($arr=null) {
-	if ($arr!=null) $this->setFrom($arr);
+	if ($arr!=null) DBo__::setPublicVars($this, $arr);
 	$data = $this->buildData(true);
 	self::_escape($data);
 	foreach ($data as $key=>$val) $data[$key] = $val===false ? $key : $key."=".$val;
@@ -239,9 +239,7 @@ public function insert($arr=null) {
 }
 
 public function update($key=null, $value=false) {
-	if ($key!=null) {
-		if (is_array($key)) $this->setFrom($key); else $this->$key = $value;
-	}
+	if ($key!=null) DBo__::setPublicVars($this, is_array($key) ? $key : [$key=>$value]);
 	$data = $this->buildData();
 	self::_escape($data);
 	foreach ($data as $key=>$val) {
@@ -506,13 +504,15 @@ class DBo_ extends IteratorIterator {
 	public function current() {
 		$set = ["db"=>$this->db, "data"=>parent::current()];
 		if ($this->usage_id) $set["usage_id"] = $this->usage_id;
-		$obj = DBo::init($this->table);
-		return $obj->setFrom($set)->setParams();
+		return DBo::init($this->table)->setFrom($set)->setParams();
 	}
 }
-class DBo__ { // call get_object_vars from outside to get only public vars
+class DBo__ { // call from outside to get/set only public vars
 	public static function getPublicVars($obj) {
 		return get_object_vars($obj);
+	}
+	public static function setPublicVars($obj, $arr) {
+		foreach ($arr as $key=>$val) $obj->$key = $val;
 	}
 }
 
