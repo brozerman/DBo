@@ -222,7 +222,7 @@ public function buildData($insert=false) {
 				$value = json_encode($value);
 			}
 		}
-		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document
+		if (method_exists($this, "set_".$key)) $value = $this->{"set_".$key}($value); // TODO2 document, test
 		if ((isset($this->col[$key]) and ($insert or !isset($pkeys[$key]))) or $value===false) $data[$key] = $value; // do not update pkeys
 	}
 	return $data;
