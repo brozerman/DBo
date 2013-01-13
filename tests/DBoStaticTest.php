@@ -242,7 +242,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testDb() {
-		$this->assertEquals(DBo::sometable()->db("somedb"), "SELECT a.* FROM somedb.sometable a");
+		$this->assertEquals(DBo::sometable()->db("mysql"), "SELECT a.* FROM mysql.sometable a");
 	}
 
 	public function testExists() {
@@ -301,18 +301,24 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	public function testSum() {
 		DBo::query("INSERT INTO test.t1 (a) VALUES (48),(49)");
 		$this->assertEquals(DBo::t1([-1,48,49])->sum("a"), 97);
+		$this->setExpectedException("exception");
+		DBo::t1()->sum("z");
 	}
 
 	public function testAvg() {
 		DBo::query("INSERT INTO test.t1 (a) VALUES (50),(54)");
 		$this->assertEquals(DBo::t1([-1,50,54])->avg("a"), 52);
 		$this->assertEquals(end(mysqli_log::$queries), "SELECT avg(a.a) FROM test.t1 a WHERE (a.a) IN (-1,50,54)");
+		$this->setExpectedException("exception");
+		DBo::t1()->avg("z");
 	}
 
 	public function testStddev() {
 		DBo::query("INSERT INTO test.t1 (a) VALUES (52),(56)");
 		$this->assertEquals(DBo::t1([-1,52,56])->stddev("a"), "2.0000");
 		$this->assertEquals(end(mysqli_log::$queries), "SELECT stddev(a.a) FROM test.t1 a WHERE (a.a) IN (-1,52,56)");
+		$this->setExpectedException("exception");
+		DBo::t1()->stddev("z");
 	}
 
 	public function testObject() {
