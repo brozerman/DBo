@@ -196,7 +196,7 @@ public function __get($name) {
 }
 
 public function setFrom($arr) {
-	foreach ($arr as $key=>$val) $this->$key = $val;
+	foreach ($arr as $key=>$val) $this->$key = $val; // TODO fix don't overwrite meta data
 	return $this;
 }
 
