@@ -10,7 +10,7 @@ before_script:
 
 script:
   - phpunit --coverage-text --coverage-html=report/ tests/ || echo
-  - phpcs --standard=zend --report-width=100 *.php | grep -Ev "\| (Spaces|Line exceeds)|valid camel|underscore|brace|parenthesis"
+  - phpcs --standard=zend --report-width=100 *.php | grep -Ev "underscore|brace|parenthesis|Spaces|Line exceeds"
   - links -width 200 -dump report/DBo.php.html | perl -pe 'undef $/; s/<.*Legend//s' | grep -v "100.00%"
 
 notifications:
