@@ -1,6 +1,5 @@
 <?php
-// throw mysqli_sql_exception on connection or query error
-mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR);
+mysqli_report(MYSQLI_REPORT_STRICT | MYSQLI_REPORT_ERROR); // throw exceptions on connection or query error
 
 /**
  * DBo efficient ORM
@@ -21,20 +20,17 @@ protected $data = false;
 protected $usage_id = false;
 protected $col = [];
 
-// forward DBo::SomeTable($args) to DBo::init("SomeTable", $args)
-public static function __callStatic($method, $args) {
+public static function __callStatic($method, $args) { // forward DBo::Table1($args) to DBo::init("Table1", $args)
 	return call_user_func("static::init", $method, $args);
 }
 
-// forward $dbo->SomeTable($args) to DBo::init("SomeTable", $args)
-public function __call($method, $args) {
+public function __call($method, $args) { // forward $dbo->Table1($args) to DBo::init("Table1", $args)
 	$obj = call_user_func("static::init", $method, $args);
 	foreach ($this->stack as $elem) $obj->stack[] = $elem;
 	return $obj;
 }
 
-// do "new DBo_SomeTable()" if class "DBo_Guestbook" exists, uses auto-loader
-public static function init($table, $params=[]) {
+public static function init($table, $params=[]) { // do "new DBo_Table1()" if class "DBo_Table1" exists
 	if (class_exists("DBo_".$table)) {
 		$class = "DBo_".$table;
 		return new $class($table, $params);
@@ -42,8 +38,7 @@ public static function init($table, $params=[]) {
 	return new self($table, $params);
 }
 
-// protected: new DBo("Sales") not instanceof DBo_Sales
-protected function __construct($table, $params) {
+protected function __construct($table, $params) { // protected: use init() for custom classes
 	$this->stack = [(object)["sel"=>"a.*", "table"=>$table, "params"=>$params, "db"=>self::$conn_db]];
 	$this->db = &$this->stack[0]->db;
 	$this->table = &$this->stack[0]->table;
@@ -204,7 +199,7 @@ public function setParams($arr=[]) { // overwrites protected members!
 	foreach ($arr as $key=>$val) $this->$key = $val;
 
 	$pkeys = &self::$schema->pkey[$this->db][$this->table];
-	foreach ($pkeys as $pkey) { // TODO check null, clear params first?
+	foreach ($pkeys as $pkey) { // TODO check null, clear params first? (insert)
 		if (isset($this->$pkey)) $this->stack[0]->params[] = [$pkey=>$this->$pkey]; // insert (complete)
 			else if (isset($this->data[$pkey])) $this->stack[0]->params[] = [$pkey=>$this->data[$pkey]]; // select
 	}
@@ -392,20 +387,7 @@ public static function keyValues($query, $params=null, $cache=null) {
 	return $return;
 }
 
-/* value(query, param1, param2, ...)
-public static function value($query, $params=null) {
-	if ($params) {
-		$params = func_get_args();
-		array_shift($params);
-		self::_escape($params);
-		$query = vsprintf(str_replace("?", "%s", $query), $params);
-	}
-	return self::$conn->query($query)->fetch_row()[0];
-}
-*/
-
-// value(query, [param1, param2, ...])
-public static function value($query, array $params=null, $cache=null) {
+public static function value($query, array $params=null, $cache=null) { // value(query, [param1, param2, ...], cache)
 	if ($params) {
 		self::_escape($params);
 		$query = vsprintf(str_replace("?", "%s", $query), $params);
@@ -428,22 +410,9 @@ public static function values($query, $params=null, $cache=null) {
 
 public function ovalues($column, $cache=null) {
 	if (!isset($this->col[$column])) throw new Exception("Invalid column");
-	$this->stack[0]->sel = "a.".$column; // TODO distinct?
+	$this->stack[0]->sel = "a.".$column; // TODO2 distinct?
 	return self::values($this->buildQuery(), null, $cache);
 }
-
-/* TODO implement, cache, static cache?, arrayY?
-public function cache($cache=null) {
-	$result = [];
-	foreach ($this->getIterator() as $row) $result[] = $row;
-	return $result;
-}
-public function oarray($cache=null) {
-	$result = [];
-	foreach ($this->getIterator() as $row) $result[] = $row;
-	return $result;
-}
-*/
 
 public static function begin() {
 	self::$conn->query("begin");
@@ -509,6 +478,7 @@ class DBo_ extends IteratorIterator {
 		return DBo::init($this->table)->setParams($set);
 	}
 }
+
 class DBo__ { // call from outside to get/set only public vars
 	public static function getPublicVars($obj) {
 		return get_object_vars($obj);
@@ -517,6 +487,34 @@ class DBo__ { // call from outside to get/set only public vars
 		foreach ($arr as $key=>$val) $obj->$key = $val;
 	}
 }
+
+/* TODO implement cache, static cache?, oarrayY?
+if ($cache and ($return=apc_fetch($query))) return $return;
+if ($cache) apc_store($query, $return, $cache);
+
+public function cache($cache=null) {
+	$result = [];
+	foreach ($this->getIterator() as $row) $result[] = $row;
+	return $result;
+}
+public function oarray($cache=null) {
+	$result = [];
+	foreach ($this->getIterator() as $row) $result[] = $row;
+	return $result;
+}
+*/
+
+/* value(query, param1, param2, ...)
+public static function value($query, $params=null) {
+	if ($params) {
+		$params = func_get_args();
+		array_shift($params);
+		self::_escape($params);
+		$query = vsprintf(str_replace("?", "%s", $query), $params);
+	}
+	return self::$conn->query($query)->fetch_row()[0];
+}
+*/
 
 /* PHP 5.5 generators
 public static function valuesY($query, $params=null) {
