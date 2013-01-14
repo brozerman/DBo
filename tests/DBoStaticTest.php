@@ -338,7 +338,7 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
 	}
 
 	public function testBuildData() {
-		$arr = ["a"=>10, "c"=>"hello", "invalid"=>"world"];
+		$arr = ["b"=>10, "c"=>"hello", "invalid"=>"world"];
 		$obj = DBo::t1()->setFrom($arr);
 		unset($arr["invalid"]);
 		$this->assertEquals($obj->buildData(), $arr);
