@@ -544,6 +544,6 @@ public static function keyValuesY($query, $params=null) {
 }
 */
 
-// TODO2 add option to disable usage_col, populate members directly
+// TODO2 add smaller version without join reduce and usage_col
 // TODO2 implement copyTo(), moveTo(), archive()
 // TODO2 load/store usage_col in apc
