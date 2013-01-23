@@ -460,7 +460,7 @@ public static function exportSchema($exclude_db=["information_schema", "performa
 	file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
 	$col = null;
 	require "schema_new.php";
-	if (empty($col)) throw new Exception("Error creating static schema data.");
+	if (empty($col)) throw new Exception("Error creating static schema data");
 	rename("schema_new.php", "schema.php");
 }
 }
@@ -547,3 +547,5 @@ public static function keyValuesY($query, $params=null) {
 // TODO2 add option to disable usage_col, populate members directly
 // TODO2 implement copyTo(), moveTo(), archive()
 // TODO2 load/store usage_col in apc
+// TODO2 document iterator_to_array(DBo::query())
+// TODO2 add type hint for DBo::query() mysqli_result, $conn mysqli
