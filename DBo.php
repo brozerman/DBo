@@ -440,28 +440,28 @@ public static function queryToText($query, $params=null) {
 }
 
 public static function exportSchema($exclude_db=["information_schema", "performance_schema", "mysql"]) {
-	$col = [];
-	$pkey = [];
-	$pkey_k = [];
-	$autoinc = [];
-	$idx = [];
-	foreach (self::query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
-		$col[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
-		if ($row["COLUMN_KEY"] == "PRI") {
-			$pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
-			$pkey_k[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
-		}
-		if ($row["COLUMN_KEY"] != "") $idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
-		if ($row["EXTRA"] == "auto_increment") $autoinc[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ] = $row["COLUMN_NAME"];
-	}
-	$schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$pkey_k=".var_export($pkey_k, true).";".
-		"\$idx=".var_export($idx, true)."; \$autoinc=".var_export($autoinc, true).";";
-	$schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
-	file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
-	$col = null;
-	require "schema_new.php";
-	if (empty($col)) throw new Exception("Error creating static schema data");
-	rename("schema_new.php", "schema.php");
+    $col = [];
+    $pkey = [];
+    $pkey_k = [];
+    $autoinc = [];
+    $idx = [];
+    foreach (self::query("SELECT * FROM information_schema.columns WHERE table_schema NOT IN ?", [$exclude_db]) as $row) {
+        $col[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+        if ($row["COLUMN_KEY"] == "PRI") {
+            $pkey[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][] = $row["COLUMN_NAME"];
+            $pkey_k[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+        }
+        if ($row["COLUMN_KEY"] != "") $idx[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ][ $row["COLUMN_NAME"] ] = 1;
+        if ($row["EXTRA"] == "auto_increment") $autoinc[ $row["TABLE_SCHEMA"] ][ $row["TABLE_NAME"] ] = $row["COLUMN_NAME"];
+    }
+    $schema = "<?php \$col=".var_export($col, true)."; \$pkey=".var_export($pkey, true)."; \$pkey_k=".var_export($pkey_k, true).";".
+        "\$idx=".var_export($idx, true)."; \$autoinc=".var_export($autoinc, true).";";
+    $schema = str_replace([" ", "\n", "array(", ",)", "\$"], ["", "", "[", "]", "\n\$"], $schema);
+    file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
+    $col = null;
+    require "schema_new.php";
+    if (empty($col)) throw new Exception("Error creating static schema data");
+    rename("schema_new.php", "schema.php");
 }
 }
 
