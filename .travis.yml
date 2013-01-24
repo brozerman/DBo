@@ -11,7 +11,7 @@ before_script:
 
 script:
   - phpunit --coverage-text --coverage-html=report/ tests/ || echo
-  - phpcs --standard=zend --report-width=100 *.php | grep -Ev "underscore|brace|parenthesis|Spaces|camel caps|Line exceeds"
+  - phpcs --standard=zend --report-width=100 *.php | grep -Ev "underscore|brace|parenthesis|Spaces|camel caps|Line exceeds|\-+"
   - links -width 200 -dump report/DBo.php.html | perl -pe 'undef $/; s/<.*Legend//s' | grep -v "100.00%"
   - phploc . | grep -Ev " 0$| 0 "
 
