@@ -5,7 +5,7 @@ php:
 before_script:
   - pear channel-discover pear.phpunit.de
   - pear install pear/PHP_CodeSniffer >/dev/null
-  - pear install pear.phpunit.de/phploc
+  - pear install pear.phpunit.de/phploc >/dev/null
   - sudo apt-get install -qq links
   - phpenv rehash
 
@@ -13,7 +13,7 @@ script:
   - phpunit --coverage-text --coverage-html=report/ tests/ || echo
   - phpcs --standard=zend --report-width=100 *.php | grep -Ev "underscore|brace|parenthesis|Spaces|camel caps|Line exceeds"
   - links -width 200 -dump report/DBo.php.html | perl -pe 'undef $/; s/<.*Legend//s' | grep -v "100.00%"
-  - phploc .
+  - phploc . | grep -Ev " 0$| 0 "
 
 notifications:
   email:
