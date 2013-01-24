@@ -549,3 +549,4 @@ public static function keyValuesY($query, $params=null) {
 // TODO2 load/store usage_col in apc
 // TODO2 document iterator_to_array(DBo::query())
 // TODO2 add type hint for DBo::query() mysqli_result, $conn mysqli
+// TODO2 handle mysql warnings?
