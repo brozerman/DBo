@@ -547,3 +547,8 @@ public static function keyValuesY($query, $params=null) {
 // TODO2 add smaller version without join reduce and usage_col
 // TODO2 implement copyTo(), moveTo(), archive()
 // TODO2 load/store usage_col in apc
+/* TODO2 check if faster:
+	$i = strlen($query)-1; $p = count($params);
+	while ($i--) if ($query[$i] === "?") { $p--; $query = substr_replace($query, $params[$p], $i, 1); }
+*/
+// TODO2 type hints @property $conn static mysqli
