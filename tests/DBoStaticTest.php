@@ -381,4 +381,6 @@ class DBoStaticTest extends PHPUnit_Framework_TestCase {
         $this->expectOutputString("Array\n(\n    [a] => 1\n    [b] => 2\n    [c] => ab\n)\n");
         DBo::t1(1)->print_r();
     }
+
+	// TODO add test for: on update current_timestamp;
 }

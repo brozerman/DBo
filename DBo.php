@@ -460,7 +460,7 @@ public static function exportSchema($exclude_db=["information_schema", "performa
     file_put_contents(__DIR__."/schema_new.php", $schema, LOCK_EX);
     $col = null;
     require "schema_new.php";
-    if (empty($col)) throw new Exception("Error creating static schema data.");
+    if (empty($col)) throw new Exception("Error creating static schema data");
     rename("schema_new.php", "schema.php");
 }
 }
@@ -551,4 +551,6 @@ public static function keyValuesY($query, $params=null) {
 	$i = strlen($query)-1; $p = count($params);
 	while ($i--) if ($query[$i] === "?") { $p--; $query = substr_replace($query, $params[$p], $i, 1); }
 */
-// TODO2 type hints @property $conn static mysqli
+// TODO2 type hints @property $conn static mysqli, DBo::query() mysqli_result, $conn mysqli
+// TODO2 document iterator_to_array(DBo::query())
+// TODO2 handle mysql warnings?
