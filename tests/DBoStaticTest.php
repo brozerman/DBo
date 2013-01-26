@@ -1,7 +1,7 @@
 <?php
 require_once "DBo.php";
 
-class mysqli_log extends mysqli {
+class mysqli_log extends mysqli { // log queries
     public static $queries = [];
 
     public function query($query) {
@@ -10,15 +10,12 @@ class mysqli_log extends mysqli {
     }
 }
 
-class DBo_SomeTable extends DBo {
+class DBo_SomeTable extends DBo { // see testCustomClass()
     function get_col() {
         return 42;
     }
 }
 
-/**
- * DBo test static methods
- */
 class DBoStaticTest extends PHPUnit_Framework_TestCase {
 
     public static function setUpBeforeClass() {
