@@ -14,8 +14,8 @@ script:
   - phpcs --standard=zend --report-width=100 *.php | grep -Ev "underscore|brace|parenthesis|Spaces|camel caps|Line exceeds|\-+"
   - links -width 200 -dump report/DBo.php.html | perl -pe 'undef $/; s/<.*Legend//s' | grep -v "100.00%"
   - phploc . | grep -Ev " 0$| 0 "
-  - echo -n Open TODOs && grep -rn "TODO " . | wc -l
-  - echo -n Open TODO2s && grep -rn "TODO2 " . | wc -l
+  - echo -n Open TODOs && grep -rn "TODO " *.php |  wc -l
+  - echo -n Open TODO2s && grep -rn "TODO2 " *.php | wc -l
 
 notifications:
   email:
