@@ -21,7 +21,7 @@ http://we-love-php.blogspot.de/2012/08/how-to-implement-small-and-fast-orm.html
 
 Testing
 -------
-https://travis-ci.org/#!/thomasbley/DBo<br/>
+[![Build Status](https://travis-ci.org/thomasbley/dbo.png)](https://travis-ci.org/thomasbley/dbo)
 https://github.com/thomasbley/DBo/blob/master/.travis.yml<br/>
 
 License
