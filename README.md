@@ -22,7 +22,7 @@ http://we-love-php.blogspot.de/2012/08/how-to-implement-small-and-fast-orm.html
 Testing
 -------
 [![Build Status](https://travis-ci.org/thomasbley/DBo.png)](https://travis-ci.org/thomasbley/DBo)
-https://github.com/thomasbley/DBo/blob/master/.travis.yml<br/>
+| [.travis.yml](https://github.com/thomasbley/DBo/blob/master/.travis.yml)
 
 License
 -------
